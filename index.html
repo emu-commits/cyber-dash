@@ -276,11 +276,9 @@ document.addEventListener('touchend', e => {
   const dx = e.changedTouches[0].clientX - touchStartX;
   if (Math.abs(dx) > 50) {
     if (dx < 0 && currentPanel === 0) {
-      // Go to panel 1, then immediately click the real <a> element.
-      // Doing both synchronously in the same touchend preserves the iOS
-      // user-gesture context that allows target=_blank navigation.
-      goToPanel(1);
-      document.getElementById('btn-open-gemini').click();
+      // window.location.href always works from a touch handler on iOS.
+      // User taps the iOS back button (<) to return to cyber-dash.
+      window.location.href = 'https://gemini.google.com/app';
     }
     else if (dx > 0 && currentPanel === 1) goToPanel(0);
   }
