@@ -482,24 +482,25 @@ async function loadTasks() {
 function loadAll() { loadMarkets(); loadWeather(); loadGmail(); loadCalendar(); loadTasks(); }
 
 // ─────────────────────────────────────────────
-// MARKETS — Yahoo Finance v8 chart API (no key)
-// FBTC  = Fidelity Bitcoin ETF (tracks BTC price)
-// SPY   = S&P 500 ETF
-// ^TNX  = 10-year US Treasury yield
-// ETF tickers have better CORS behaviour than index/crypto symbols.
+// MARKETS
+// BTC   — CoinGecko public API (no key, confirmed CORS)
+// IVVon — GeckoTerminal DEX pool OHLCV (on-chain S&P 500 tracker)
+// IEFon — GeckoTerminal DEX pool OHLCV (on-chain 10-yr treasury tracker)
+// Pool addresses cached in localStorage after first search.
 // ─────────────────────────────────────────────
 const MARKET_ASSETS = [
-  { symbol: 'FBTC', label: 'BTC', fmt: p => '$' + p.toFixed(2) },
-  { symbol: 'SPY',  label: 'S&P', fmt: p => '$' + p.toFixed(2) },
-  { symbol: '^TNX', label: '10Y', fmt: p => p.toFixed(2) + '%' },
+  { id: 'btc',   label: 'BTC', src: 'cg',  cgId: 'bitcoin', fmt: p => '$' + (p >= 1000 ? (p/1000).toFixed(1)+'k' : p.toFixed(0)) },
+  { id: 'ivvon', label: 'S&P', src: 'gt',  query: 'IVVon',  fmt: p => '$' + p.toFixed(2) },
+  { id: 'iefon', label: '10Y', src: 'gt',  query: 'IEFon',  fmt: p => '$' + p.toFixed(2) },
 ];
 
 async function loadMarkets() {
   const el = document.getElementById('markets-body');
   el.innerHTML = '<div class="loading">loading…</div>';
-  const results = await Promise.all(
-    MARKET_ASSETS.map(a => fetchYahoo(a.symbol).catch(e => ({ error: e.message })))
-  );
+  const results = await Promise.all(MARKET_ASSETS.map(a =>
+    (a.src === 'cg' ? fetchCoinGecko(a.cgId) : fetchGeckoTerminal(a.id, a.query))
+    .catch(e => ({ error: e.message }))
+  ));
   el.innerHTML = MARKET_ASSETS.map((asset, i) => {
     const d = results[i];
     if (d.error) return `<div class="mkt-row">
@@ -520,18 +521,45 @@ async function loadMarkets() {
   }).join('');
 }
 
-async function fetchYahoo(symbol) {
-  const base = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`;
-  const params = '?interval=1d&range=10d&includePrePost=false';
-  let r = await fetch(base + params).catch(() => null);
-  if (!r?.ok) r = await fetch(base.replace('query1', 'query2') + params).catch(() => null);
-  if (!r?.ok) throw new Error(`HTTP ${r?.status ?? 'network error'}`);
+async function fetchCoinGecko(coinId) {
+  const r = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=7&interval=daily`);
+  if (!r.ok) throw new Error('CG ' + r.status);
   const d = await r.json();
-  const result = d?.chart?.result?.[0];
-  if (!result) throw new Error(d?.chart?.error?.description ?? 'no data');
-  const closes = result.indicators.quote[0].close.filter(c => c != null);
-  if (closes.length < 2) throw new Error('insufficient data');
-  return { prices: closes.slice(-7) };
+  const prices = d.prices.map(p => p[1]).slice(-7);
+  if (prices.length < 2) throw new Error('insufficient data');
+  return { prices };
+}
+
+async function fetchGeckoTerminal(id, query) {
+  const cacheKey = `gt_pool_${id}`;
+  let poolRef = localStorage.getItem(cacheKey); // stored as "network/address"
+
+  if (!poolRef) {
+    const r = await fetch(`https://api.geckoterminal.com/api/v2/search/pools?query=${encodeURIComponent(query)}&page=1`);
+    if (!r.ok) throw new Error('search ' + r.status);
+    const d = await r.json();
+    const pool = d.data?.[0];
+    if (!pool) throw new Error(`${query} not found on any DEX`);
+    const network = pool.relationships?.network?.data?.id;
+    const address = pool.attributes?.address;
+    if (!network || !address) throw new Error('bad pool data');
+    poolRef = `${network}/${address}`;
+    localStorage.setItem(cacheKey, poolRef);
+  }
+
+  const [network, ...addrParts] = poolRef.split('/');
+  const address = addrParts.join('/');
+  const r = await fetch(`https://api.geckoterminal.com/api/v2/networks/${network}/pools/${address}/ohlcv/day?limit=8&currency=usd`);
+  if (!r.ok) {
+    localStorage.removeItem(cacheKey); // stale cache — retry search next time
+    throw new Error('ohlcv ' + r.status);
+  }
+  const d = await r.json();
+  const candles = d.data?.attributes?.ohlcv_list;
+  if (!candles?.length) throw new Error('no candle data');
+  const prices = candles.slice(-7).map(c => parseFloat(c[4])); // index 4 = close
+  if (prices.length < 2) throw new Error('insufficient data');
+  return { prices };
 }
 
 function mkSparkline(prices, isUp) {
