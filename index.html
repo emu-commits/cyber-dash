@@ -83,6 +83,36 @@
     .loading { color: #444; font-size: 0.8rem; text-align: center; padding: 20px 0; }
     .empty { color: #333; font-size: 0.8rem; text-align: center; padding: 16px 0; }
 
+    /* ── Weather ── */
+    .wx-hourly {
+      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .wx-hourly::-webkit-scrollbar { display: none; }
+    .wx-hour {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      min-width: 44px; padding: 6px 4px; border-radius: 6px;
+      background: #0d0d0d; border: 1px solid #1a1a1a; flex-shrink: 0;
+    }
+    .wx-hour.now { border-color: #7cf4; background: #0d1a22; }
+    .wx-hour-time { font-size: 0.62rem; color: #555; }
+    .wx-hour-temp { font-size: 0.82rem; color: #ddd; font-weight: 600; }
+    .wx-hour-rain { font-size: 0.62rem; color: #7af; }
+    .wx-daily { margin-top: 12px; }
+    .wx-day {
+      display: flex; align-items: center; padding: 6px 0;
+      border-bottom: 1px solid #1a1a1a; gap: 8px;
+    }
+    .wx-day:last-child { border-bottom: none; }
+    .wx-day-name { font-size: 0.75rem; color: #888; min-width: 36px; }
+    .wx-day-bar-wrap { flex: 1; display: flex; align-items: center; gap: 4px; }
+    .wx-day-lo { font-size: 0.72rem; color: #555; min-width: 28px; text-align: right; }
+    .wx-day-hi { font-size: 0.72rem; color: #ddd; min-width: 28px; }
+    .wx-day-bar-bg { flex: 1; height: 4px; background: #1a1a1a; border-radius: 2px; position: relative; }
+    .wx-day-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #4af, #fa4); position: absolute; }
+    .wx-day-rain { font-size: 0.68rem; color: #7af; min-width: 32px; text-align: right; }
+    .wx-location { font-size: 0.65rem; color: #333; margin-top: 8px; }
+
     /* ── Refresh button ── */
     .refresh-btn { font-size: 0.75rem; color: #7cf4; background: none; border: none; cursor: pointer; float: right; margin-top: -2px; }
     .refresh-btn:hover { color: #7cf; }
@@ -137,6 +167,11 @@
     <div class="panel" id="panel-dash">
       <div id="ptr"><div class="ptr-spinner"></div><span id="ptr-label"></span></div>
       <div class="panel-title">dashboard</div>
+
+      <div class="card">
+        <div class="card-title">weather <button class="refresh-btn" onclick="loadWeather()">↻</button></div>
+        <div id="wx-body"><div class="loading">locating…</div></div>
+      </div>
 
       <div class="card">
         <div class="card-title">inbox <button class="refresh-btn" onclick="loadAll()">↻</button></div>
@@ -422,7 +457,101 @@ async function loadTasks() {
   } catch(e) { el.innerHTML = `<div class="empty">error: ${esc(e.message)}</div>`; }
 }
 
-function loadAll() { loadGmail(); loadCalendar(); loadTasks(); }
+function loadAll() { loadWeather(); loadGmail(); loadCalendar(); loadTasks(); }
+
+// ─────────────────────────────────────────────
+// WEATHER — Open-Meteo (free, no API key)
+// ─────────────────────────────────────────────
+function loadWeather() {
+  const el = document.getElementById('wx-body');
+  el.innerHTML = '<div class="loading">locating…</div>';
+  if (!navigator.geolocation) { el.innerHTML = '<div class="empty">geolocation not supported</div>'; return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => fetchWeather(pos.coords.latitude, pos.coords.longitude, el),
+    () => el.innerHTML = '<div class="empty">location access denied</div>',
+    { timeout: 10000 }
+  );
+}
+
+async function fetchWeather(lat, lon, el) {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+      + `&hourly=temperature_2m,precipitation_probability,precipitation`
+      + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max`
+      + `&temperature_unit=fahrenheit&precipitation_unit=inch`
+      + `&wind_speed_unit=mph&timezone=${encodeURIComponent(tz)}&forecast_days=7`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(r.statusText);
+    const d = await r.json();
+    renderWeather(d, lat, lon, el);
+  } catch(e) { el.innerHTML = `<div class="empty">weather error: ${esc(e.message)}</div>`; }
+}
+
+function renderWeather(d, lat, lon, el) {
+  const now = new Date();
+  const nowHour = now.toISOString().slice(0, 13); // "2025-04-04T14"
+
+  // ── Hourly: next 7 hours ──
+  const hTimes = d.hourly.time;
+  const hTemp  = d.hourly.temperature_2m;
+  const hPop   = d.hourly.precipitation_probability;
+  const startIdx = hTimes.findIndex(t => t >= nowHour);
+  const hourSlice = Array.from({length: 7}, (_, i) => startIdx + i).filter(i => i < hTimes.length);
+
+  const hourHTML = hourSlice.map((i, pos) => {
+    const t = new Date(hTimes[i]);
+    const label = pos === 0 ? 'now' : t.toLocaleTimeString('en', {hour:'numeric', hour12:true}).toLowerCase().replace(' ','');
+    const pop = hPop[i] ?? 0;
+    return `<div class="wx-hour${pos === 0 ? ' now' : ''}">
+      <div class="wx-hour-time">${label}</div>
+      <div class="wx-hour-temp">${Math.round(hTemp[i])}°</div>
+      <div class="wx-hour-rain">${pop > 0 ? pop + '%' : '—'}</div>
+    </div>`;
+  }).join('');
+
+  // ── Daily: 7 days ──
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dTimes = d.daily.time;
+  const dHi    = d.daily.temperature_2m_max;
+  const dLo    = d.daily.temperature_2m_min;
+  const dPop   = d.daily.precipitation_probability_max;
+  const dPrecip = d.daily.precipitation_sum;
+
+  // Temperature range across all 7 days for bar scaling
+  const allHi = Math.max(...dHi), allLo = Math.min(...dLo);
+  const range = allHi - allLo || 1;
+
+  const dayHTML = dTimes.map((t, i) => {
+    const date = new Date(t + 'T12:00:00');
+    const isToday = i === 0;
+    const name = isToday ? 'today' : days[date.getDay()];
+    const pop = dPop[i] ?? 0;
+    const precip = dPrecip[i] ?? 0;
+    // Bar: left offset and width scaled to the week's temp range
+    const left = ((dLo[i] - allLo) / range * 100).toFixed(1);
+    const width = ((dHi[i] - dLo[i]) / range * 100).toFixed(1);
+    const rainLabel = pop > 0 ? (precip > 0.05 ? precip.toFixed(2) + '"' : pop + '%') : '—';
+    return `<div class="wx-day">
+      <div class="wx-day-name">${name}</div>
+      <div class="wx-day-bar-wrap">
+        <div class="wx-day-lo">${Math.round(dLo[i])}°</div>
+        <div class="wx-day-bar-bg"><div class="wx-day-bar" style="left:${left}%;width:${width}%"></div></div>
+        <div class="wx-day-hi">${Math.round(dHi[i])}°</div>
+      </div>
+      <div class="wx-day-rain">${rainLabel}</div>
+    </div>`;
+  }).join('');
+
+  // Reverse geocode city name via Open-Meteo's geocoding isn't available,
+  // so show rounded coordinates as a lightweight location hint
+  const locLabel = `${Math.abs(lat).toFixed(2)}°${lat>=0?'N':'S'} ${Math.abs(lon).toFixed(2)}°${lon>=0?'E':'W'}`;
+
+  el.innerHTML = `
+    <div class="wx-hourly">${hourHTML}</div>
+    <div class="wx-daily">${dayHTML}</div>
+    <div class="wx-location">${locLabel}</div>`;
+}
 
 // ─────────────────────────────────────────────
 // GEMINI LAUNCHER
