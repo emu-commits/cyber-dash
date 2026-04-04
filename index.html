@@ -232,6 +232,7 @@
 // Register this page's origin as an Authorized JavaScript Origin
 // in Google Cloud Console → APIs & Services → Credentials.
 // Enable: Gmail API, Google Calendar API, Tasks API
+// For markets (S&P + 10Y): free key at alphavantage.co → set AV_KEY below
 // ─────────────────────────────────────────────
 const CLIENT_ID = '643098083415-aldnf1l4k3m7r19airb07s42bolg9e16.apps.googleusercontent.com';
 
@@ -481,28 +482,40 @@ async function loadTasks() {
 function loadAll() { loadMarkets(); loadWeather(); loadGmail(); loadCalendar(); loadTasks(); }
 
 // ─────────────────────────────────────────────
-// MARKETS — Yahoo Finance v8 chart API (free, no key)
-// Tickers: BTC-USD, ^GSPC (S&P 500), ^TNX (10-yr treasury yield)
+// MARKETS
+// BTC  — Binance public API (no key, CORS-friendly)
+// S&P  — Alpha Vantage via SPY ETF (free key: alphavantage.co)
+// 10Y  — Alpha Vantage TREASURY_YIELD endpoint (same key)
 // ─────────────────────────────────────────────
+const AV_KEY = 'YOUR_ALPHAVANTAGE_KEY'; // free key at alphavantage.co
+
 const MARKET_ASSETS = [
-  { symbol: 'BTC-USD', label: 'BTC',  fmt: p => p >= 1000 ? '$' + (p/1000).toFixed(1) + 'k' : '$' + p.toFixed(0) },
-  { symbol: '^GSPC',   label: 'S&P',  fmt: p => p.toLocaleString('en', {maximumFractionDigits: 0}) },
-  { symbol: '^TNX',    label: '10Y',  fmt: p => p.toFixed(2) + '%' },
+  { id: 'btc', label: 'BTC', fmt: p => p >= 1000 ? '$' + (p/1000).toFixed(1) + 'k' : '$' + p.toFixed(0) },
+  { id: 'spy', label: 'S&P', fmt: p => '$' + p.toFixed(0) },
+  { id: 'tnx', label: '10Y', fmt: p => p.toFixed(2) + '%' },
 ];
 
 async function loadMarkets() {
   const el = document.getElementById('markets-body');
-  el.innerHTML = '<div class="loading">loading…</div>';
-  const results = await Promise.all(MARKET_ASSETS.map(a => fetchYahoo(a.symbol).catch(e => ({ error: e.message }))));
+  if (AV_KEY === 'YOUR_ALPHAVANTAGE_KEY') {
+    el.innerHTML = '<div class="empty">Set AV_KEY (free at alphavantage.co) to enable S&amp;P + 10Y</div>';
+    // Still load BTC which needs no key
+  }
+  const [btc, spy, tnx] = await Promise.all([
+    fetchBTC().catch(e => ({ error: e.message })),
+    AV_KEY !== 'YOUR_ALPHAVANTAGE_KEY' ? fetchAVDaily('SPY').catch(e => ({ error: e.message })) : { error: 'no key' },
+    AV_KEY !== 'YOUR_ALPHAVANTAGE_KEY' ? fetchAVTreasury().catch(e => ({ error: e.message })) : { error: 'no key' },
+  ]);
+  const datasets = [btc, spy, tnx];
   el.innerHTML = MARKET_ASSETS.map((asset, i) => {
-    const d = results[i];
+    const d = datasets[i];
     if (d.error) return `<div class="mkt-row">
       <div class="mkt-name">${asset.label}</div>
-      <div class="mkt-error">${esc(d.error)}</div>
+      <div class="mkt-error">${d.error === 'no key' ? 'add AV_KEY' : esc(d.error)}</div>
     </div>`;
     const prices = d.prices;
     const first = prices[0], last = prices[prices.length - 1];
-    const pct = ((last - first) / first * 100);
+    const pct = (last - first) / first * 100;
     const isUp = pct >= 0;
     return `<div class="mkt-row">
       <div class="mkt-name">${asset.label}</div>
@@ -515,20 +528,37 @@ async function loadMarkets() {
   }).join('');
 }
 
-async function fetchYahoo(symbol) {
-  // Try both Yahoo Finance query hosts; one may have better CORS availability
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=8d&includePrePost=false`;
-  let r = await fetch(url).catch(() => null);
-  if (!r?.ok) {
-    r = await fetch(url.replace('query1', 'query2'));
-  }
-  if (!r?.ok) throw new Error('unavailable');
+async function fetchBTC() {
+  // Binance klines: [openTime, open, high, low, close, ...]
+  const r = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=8');
+  if (!r.ok) throw new Error('Binance ' + r.status);
   const d = await r.json();
-  const result = d?.chart?.result?.[0];
-  if (!result) throw new Error('no data');
-  const closes = result.indicators.quote[0].close.filter(c => c != null);
-  if (closes.length < 2) throw new Error('insufficient data');
-  return { prices: closes.slice(-7) };  // last 7 trading days
+  return { prices: d.slice(-7).map(k => parseFloat(k[4])) };
+}
+
+async function fetchAVDaily(symbol) {
+  const r = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${AV_KEY}&outputsize=compact`);
+  if (!r.ok) throw new Error('AV ' + r.status);
+  const d = await r.json();
+  if (d.Note) throw new Error('rate limited');
+  if (d.Information) throw new Error('invalid key');
+  const series = d['Time Series (Daily)'];
+  if (!series) throw new Error('no data');
+  const prices = Object.keys(series).sort().slice(-7).map(k => parseFloat(series[k]['4. close']));
+  if (prices.length < 2) throw new Error('insufficient data');
+  return { prices };
+}
+
+async function fetchAVTreasury() {
+  const r = await fetch(`https://www.alphavantage.co/query?function=TREASURY_YIELD&interval=daily&maturity=10year&apikey=${AV_KEY}`);
+  if (!r.ok) throw new Error('AV ' + r.status);
+  const d = await r.json();
+  if (d.Note) throw new Error('rate limited');
+  if (d.Information) throw new Error('invalid key');
+  if (!d.data?.length) throw new Error('no data');
+  const prices = d.data.slice(0, 7).reverse().map(p => parseFloat(p.value)).filter(p => !isNaN(p));
+  if (prices.length < 2) throw new Error('insufficient data');
+  return { prices };
 }
 
 function mkSparkline(prices, isUp) {
