@@ -540,24 +540,26 @@ async function fetchGeckoTerminal(id, query) {
     const d = await r.json();
     const pool = d.data?.[0];
     if (!pool) throw new Error(`${query} not found on any DEX`);
-    const network = pool.relationships?.network?.data?.id;
-    const address = pool.attributes?.address;
-    if (!network || !address) throw new Error('bad pool data');
-    poolRef = `${network}/${address}`;
+    // pool.id format: "{network}_{0xaddress}" — extract by finding the 0x boundary
+    // handles multi-word networks like "arbitrum_one_0x..."
+    const match = pool.id.match(/^(.+?)_(0x[0-9a-fA-F]+)$/);
+    if (!match) throw new Error(`unexpected pool id: ${pool.id}`);
+    poolRef = `${match[1]}/${match[2]}`;
     localStorage.setItem(cacheKey, poolRef);
   }
 
-  const [network, ...addrParts] = poolRef.split('/');
-  const address = addrParts.join('/');
+  const slashIdx = poolRef.indexOf('/');
+  const network = poolRef.slice(0, slashIdx);
+  const address = poolRef.slice(slashIdx + 1);
   const r = await fetch(`https://api.geckoterminal.com/api/v2/networks/${network}/pools/${address}/ohlcv/day?limit=8&currency=usd`);
   if (!r.ok) {
-    localStorage.removeItem(cacheKey); // stale cache — retry search next time
+    localStorage.removeItem(cacheKey);
     throw new Error('ohlcv ' + r.status);
   }
   const d = await r.json();
   const candles = d.data?.attributes?.ohlcv_list;
   if (!candles?.length) throw new Error('no candle data');
-  const prices = candles.slice(-7).map(c => parseFloat(c[4])); // index 4 = close
+  const prices = candles.slice(-7).map(c => parseFloat(c[4]));
   if (prices.length < 2) throw new Error('insufficient data');
   return { prices };
 }
