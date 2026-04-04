@@ -188,17 +188,33 @@ function initGIS() {
     client_id: CLIENT_ID,
     scope: SCOPES,
     callback: (resp) => {
-      if (resp.error) { showAuthError(resp.error); return; }
+      if (resp.error) {
+        // Silent re-auth failed — clear session and show login button
+        localStorage.removeItem('cyberdash_hint');
+        showAuthError('');
+        return;
+      }
       accessToken = resp.access_token;
+      // Refresh token every 55 minutes (tokens expire after 60)
+      setTimeout(() => tokenClient.requestAccessToken({ prompt: '', login_hint: localStorage.getItem('cyberdash_hint') || '' }), 55 * 60 * 1000);
       onSignedIn();
     },
-    error_callback: (err) => { showAuthError(err.type || JSON.stringify(err)); }
+    error_callback: (err) => {
+      localStorage.removeItem('cyberdash_hint');
+      showAuthError(err.type || JSON.stringify(err));
+    }
   });
+
+  // Auto sign-in if user previously logged in
+  const hint = localStorage.getItem('cyberdash_hint');
+  if (hint) {
+    tokenClient.requestAccessToken({ prompt: '', login_hint: hint });
+  }
 }
 
 function startLogin() {
   if (!tokenClient) { showAuthError('Google Identity Services not loaded yet.'); return; }
-  tokenClient.requestAccessToken({ prompt: 'consent' });
+  tokenClient.requestAccessToken({ prompt: '' });
 }
 
 function showAuthError(msg) {
@@ -208,6 +224,7 @@ function showAuthError(msg) {
 async function onSignedIn() {
   const info = await gapi('https://www.googleapis.com/oauth2/v3/userinfo');
   document.getElementById('user-email').textContent = info.email || '';
+  localStorage.setItem('cyberdash_hint', info.email || '');
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   initGeminiPanel();
@@ -217,6 +234,7 @@ async function onSignedIn() {
 function signOut() {
   google.accounts.oauth2.revoke(accessToken, () => {});
   accessToken = null;
+  localStorage.removeItem('cyberdash_hint');
   document.getElementById('app').style.display = 'none';
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('auth-error').textContent = '';
