@@ -203,32 +203,32 @@ function initGIS() {
     scope: SCOPES,
     callback: (resp) => {
       if (resp.error) {
-        // Silent re-auth failed — clear session and show login button
-        localStorage.removeItem('cyberdash_hint');
-        showAuthError('');
+        // popup_closed_by_user is not an error worth showing
+        if (resp.error !== 'popup_closed_by_user') showAuthError(resp.error);
         return;
       }
       accessToken = resp.access_token;
-      // Refresh token every 55 minutes (tokens expire after 60)
-      setTimeout(() => tokenClient.requestAccessToken({ prompt: '', login_hint: localStorage.getItem('cyberdash_hint') || '' }), 55 * 60 * 1000);
+      // Refresh token every 55 min (tokens expire after 60); fine to call from
+      // a timeout since it re-uses an existing Google session without UI
+      setTimeout(() => tokenClient.requestAccessToken({
+        prompt: '', login_hint: localStorage.getItem('cyberdash_hint') || ''
+      }), 55 * 60 * 1000);
       onSignedIn();
     },
     error_callback: (err) => {
-      localStorage.removeItem('cyberdash_hint');
+      // popup_failed_to_open fires when called outside a user gesture (e.g. auto-login
+      // attempts). Suppress it — the login button is still visible and functional.
+      if ((err.type || '') === 'popup_failed_to_open') return;
       showAuthError(err.type || JSON.stringify(err));
     }
   });
-
-  // Auto sign-in if user previously logged in
-  const hint = localStorage.getItem('cyberdash_hint');
-  if (hint) {
-    tokenClient.requestAccessToken({ prompt: '', login_hint: hint });
-  }
 }
 
 function startLogin() {
   if (!tokenClient) { showAuthError('Google Identity Services not loaded yet.'); return; }
-  tokenClient.requestAccessToken({ prompt: '' });
+  showAuthError('');
+  // login_hint skips account picker on repeat visits
+  tokenClient.requestAccessToken({ prompt: '', login_hint: localStorage.getItem('cyberdash_hint') || '' });
 }
 
 function showAuthError(msg) {
@@ -437,11 +437,16 @@ function detectPlatform() {
 }
 
 function openGemini() {
-  // window.open with _blank opens a Safari View Controller on iOS —
-  // a modal browser that dismisses back to this page when the user taps Done.
-  // On Android/desktop it opens a new tab; closing it returns here too.
-  // We never leave panel 0, so no snap-back logic needed.
-  window.open('https://gemini.google.com/app', '_blank');
+  // Programmatic anchor click bypasses popup blocking that affects window.open()
+  // when called from touch event handlers on iOS/mobile.
+  // On iOS Safari this opens a Safari View Controller (modal); tapping Done returns here.
+  const a = document.createElement('a');
+  a.href = 'https://gemini.google.com/app';
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 function initGeminiPanel() {
