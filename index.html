@@ -87,39 +87,21 @@
     .refresh-btn { font-size: 0.75rem; color: #7cf4; background: none; border: none; cursor: pointer; float: right; margin-top: -2px; }
     .refresh-btn:hover { color: #7cf; }
 
-    /* ── Chat panel ── */
-    #chat-messages {
-      display: flex; flex-direction: column; gap: 12px;
-      min-height: calc(100dvh - 180px);
+    /* ── Gemini launcher panel ── */
+    #panel-gemini {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 28px; text-align: center;
     }
-    .msg { max-width: 88%; padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; line-height: 1.45; word-wrap: break-word; white-space: pre-wrap; }
-    .msg-user { align-self: flex-end; background: #1a3a4a; border: 1px solid #2a5a6a; color: #ddd; }
-    .msg-gemini { align-self: flex-start; background: #111; border: 1px solid #222; color: #ccc; }
-    .msg-tool { align-self: flex-start; background: #0d1a0d; border: 1px solid #1a3a1a; color: #6a6; font-size: 0.72rem; font-style: italic; }
-    .msg-error { align-self: flex-start; background: #1a0d0d; border: 1px solid #3a1a1a; color: #f77; font-size: 0.8rem; }
-
-    #chat-input-bar {
-      position: fixed; bottom: 32px; left: 0; right: 0; padding: 8px 12px;
-      background: rgba(10,10,10,0.95); border-top: 1px solid #222;
-      display: none; gap: 8px; backdrop-filter: blur(8px);
+    #panel-gemini .panel-title { align-self: flex-start; }
+    .gemini-logo { font-size: 3rem; line-height: 1; }
+    .gemini-label { font-size: 0.75rem; color: #555; max-width: 240px; line-height: 1.5; }
+    #btn-open-gemini {
+      padding: 14px 40px; font-size: 1rem; border: 1px solid #7cf;
+      background: transparent; color: #7cf; border-radius: 8px; cursor: pointer;
+      letter-spacing: 0.05em;
     }
-    #chat-input-bar.visible { display: flex; }
-    #chat-input {
-      flex: 1; background: #111; border: 1px solid #333; border-radius: 20px;
-      color: #e0e0e0; padding: 9px 16px; font-size: 0.85rem; outline: none;
-      resize: none; max-height: 100px; overflow-y: auto;
-    }
-    #chat-input:focus { border-color: #7cf4; }
-    #btn-send {
-      background: #7cf2; border: 1px solid #7cf4; color: #7cf;
-      border-radius: 50%; width: 40px; height: 40px; flex-shrink: 0;
-      cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
-    }
-    #btn-send:hover { background: #7cf3; }
-    #btn-send:disabled { opacity: 0.35; cursor: default; }
-
-    #panel-chat { padding-bottom: 96px; }
-    .model-badge { font-size: 0.65rem; color: #444; margin-bottom: 8px; }
+    #btn-open-gemini:hover { background: rgba(119,204,255,0.1); }
+    .gemini-note { font-size: 0.7rem; color: #333; }
   </style>
 </head>
 <body>
@@ -158,11 +140,13 @@
       </div>
     </div>
 
-    <!-- Panel 1: Chat -->
-    <div class="panel" id="panel-chat">
-      <div class="panel-title">gemini chat</div>
-      <div class="model-badge">gemini-2.0-flash · oauth · tool use enabled</div>
-      <div id="chat-messages"></div>
+    <!-- Panel 1: Gemini launcher -->
+    <div class="panel" id="panel-gemini">
+      <div class="panel-title">gemini</div>
+      <div class="gemini-logo">✦</div>
+      <button id="btn-open-gemini" onclick="openGemini()">Open Gemini</button>
+      <div class="gemini-label">Opens the Gemini app with your existing workspace permissions — email, calendar, and tasks access included.</div>
+      <div class="gemini-note" id="gemini-platform"></div>
     </div>
   </div>
 
@@ -170,41 +154,24 @@
     <div class="dot active" onclick="goToPanel(0)"></div>
     <div class="dot" onclick="goToPanel(1)"></div>
   </div>
-
-  <div id="chat-input-bar">
-    <textarea id="chat-input" rows="1" placeholder="Ask Gemini…" onkeydown="chatKeydown(event)" oninput="autoResizeInput()"></textarea>
-    <button id="btn-send" onclick="sendChat()">↑</button>
-  </div>
 </div>
 
 <script>
 // ─────────────────────────────────────────────
 // CONFIG
-// Only one credential needed: your OAuth Client ID.
 // Register this page's origin as an Authorized JavaScript Origin
 // in Google Cloud Console → APIs & Services → Credentials.
-//
-// Enable these APIs in your Cloud project:
-//   - Gmail API
-//   - Google Calendar API
-//   - Tasks API
-//   - Generative Language API  (for Gemini via OAuth)
+// Enable: Gmail API, Google Calendar API, Tasks API
 // ─────────────────────────────────────────────
 const CLIENT_ID = '643098083415-aldnf1l4k3m7r19airb07s42bolg9e16.apps.googleusercontent.com';
 
-// Scopes:
-//   cloud-platform  → lets the OAuth token call the Gemini API (same as Gemini CLI)
-//   gmail / calendar / tasks → for Gemini tool calls and direct dashboard loads
+// Read-only scopes — dashboard only. Write actions handled by native Gemini app via deep link.
 const SCOPES = [
-  'https://www.googleapis.com/auth/cloud-platform',
-  'https://www.googleapis.com/auth/gmail.modify',
-  'https://www.googleapis.com/auth/calendar',
-  'https://www.googleapis.com/auth/tasks',
+  'https://www.googleapis.com/auth/gmail.readonly',
+  'https://www.googleapis.com/auth/calendar.readonly',
+  'https://www.googleapis.com/auth/tasks.readonly',
   'openid', 'email', 'profile'
 ].join(' ');
-
-// Gemini endpoint — uses Bearer token auth, no API key required
-const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 // ─────────────────────────────────────────────
 // STATE
@@ -212,7 +179,6 @@ const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models
 let accessToken = null;
 let tokenClient = null;
 let currentPanel = 0;
-let chatHistory = [];
 
 // ─────────────────────────────────────────────
 // GOOGLE IDENTITY SERVICES
@@ -244,14 +210,13 @@ async function onSignedIn() {
   document.getElementById('user-email').textContent = info.email || '';
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+  initGeminiPanel();
   loadAll();
 }
 
 function signOut() {
   google.accounts.oauth2.revoke(accessToken, () => {});
   accessToken = null;
-  chatHistory = [];
-  document.getElementById('chat-messages').innerHTML = '';
   document.getElementById('app').style.display = 'none';
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('auth-error').textContent = '';
@@ -287,8 +252,6 @@ function goToPanel(idx) {
   currentPanel = idx;
   document.getElementById('panels').style.transform = `translateX(-${idx * 50}%)`;
   document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === idx));
-  document.getElementById('chat-input-bar').classList.toggle('visible', idx === 1);
-  if (idx === 1) document.getElementById('chat-input').focus();
 }
 
 // ─────────────────────────────────────────────
@@ -376,267 +339,50 @@ async function loadTasks() {
 function loadAll() { loadGmail(); loadCalendar(); loadTasks(); }
 
 // ─────────────────────────────────────────────
-// GEMINI — called with OAuth Bearer token (no API key)
-// This is identical to how Gemini CLI authenticates
+// GEMINI LAUNCHER
+// iOS: no confirmed URL scheme for standalone app — opens web which
+//   may hand off to the app via Safari's smart app banners.
+// Android: intent URL targets com.google.android.apps.bard (Gemini's
+//   package name) and falls back to the web if not installed.
 // ─────────────────────────────────────────────
+function detectPlatform() {
+  const ua = navigator.userAgent;
+  if (/android/i.test(ua)) return 'android';
+  if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
+  return 'desktop';
+}
 
-const GEMINI_TOOLS = [{
-  functionDeclarations: [
-    {
-      name: 'list_emails',
-      description: 'List recent emails from the Gmail inbox.',
-      parameters: {
-        type: 'OBJECT',
-        properties: {
-          max_results: { type: 'NUMBER', description: 'Max emails to return (default 5)' },
-          query: { type: 'STRING', description: 'Optional Gmail search query e.g. "from:alice@example.com is:unread"' }
-        }
-      }
-    },
-    {
-      name: 'list_calendar_events',
-      description: 'List upcoming Google Calendar events.',
-      parameters: {
-        type: 'OBJECT',
-        properties: {
-          days_ahead: { type: 'NUMBER', description: 'Days ahead to look (default 7)' },
-          max_results: { type: 'NUMBER', description: 'Max events to return (default 10)' }
-        }
-      }
-    },
-    {
-      name: 'list_tasks',
-      description: 'List tasks from Google Tasks.',
-      parameters: {
-        type: 'OBJECT',
-        properties: {
-          max_results: { type: 'NUMBER', description: 'Max tasks to return (default 10)' }
-        }
-      }
-    },
-    {
-      name: 'create_calendar_event',
-      description: 'Create a Google Calendar event.',
-      parameters: {
-        type: 'OBJECT',
-        properties: {
-          summary: { type: 'STRING', description: 'Event title' },
-          start_datetime: { type: 'STRING', description: 'ISO 8601 start datetime e.g. 2025-06-01T14:00:00' },
-          end_datetime: { type: 'STRING', description: 'ISO 8601 end datetime' },
-          description: { type: 'STRING', description: 'Optional description' },
-          location: { type: 'STRING', description: 'Optional location' }
-        },
-        required: ['summary', 'start_datetime', 'end_datetime']
-      }
-    },
-    {
-      name: 'send_email',
-      description: 'Send an email via Gmail.',
-      parameters: {
-        type: 'OBJECT',
-        properties: {
-          to: { type: 'STRING', description: 'Recipient email address' },
-          subject: { type: 'STRING', description: 'Email subject' },
-          body: { type: 'STRING', description: 'Plain text email body' }
-        },
-        required: ['to', 'subject', 'body']
-      }
-    },
-    {
-      name: 'create_task',
-      description: 'Create a task in Google Tasks.',
-      parameters: {
-        type: 'OBJECT',
-        properties: {
-          title: { type: 'STRING', description: 'Task title' },
-          notes: { type: 'STRING', description: 'Optional notes' },
-          due: { type: 'STRING', description: 'Optional due date YYYY-MM-DD' }
-        },
-        required: ['title']
-      }
-    }
-  ]
-}];
+function geminiUrl() {
+  const platform = detectPlatform();
+  if (platform === 'android') {
+    // Android intent URL: opens Gemini app if installed, falls back to browser
+    return 'intent://gemini.google.com/app#Intent;scheme=https;package=com.google.android.apps.bard;S.browser_fallback_url=https%3A%2F%2Fgemini.google.com%2Fapp;end';
+  }
+  // iOS and desktop: open web — Safari may hand off to the Gemini app
+  return 'https://gemini.google.com/app';
+}
 
-async function executeTool(name, args) {
-  switch (name) {
-    case 'list_emails': {
-      const max = args.max_results || 5;
-      const q = args.query ? `&q=${encodeURIComponent(args.query)}` : '';
-      const r = await gapi(`https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${max}&labelIds=INBOX${q}`);
-      if (!r.messages) return { emails: [] };
-      const details = await Promise.all(
-        r.messages.map(m => gapi(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`))
-      );
-      return { emails: details.map(msg => {
-        const hdrs = Object.fromEntries((msg.payload?.headers||[]).map(h=>[h.name,h.value]));
-        return { from: hdrs.From, subject: hdrs.Subject, date: hdrs.Date, snippet: msg.snippet, unread: (msg.labelIds||[]).includes('UNREAD') };
-      })};
-    }
-    case 'list_calendar_events': {
-      const days = args.days_ahead || 7;
-      const max = args.max_results || 10;
-      const now = new Date().toISOString();
-      const end = new Date(Date.now() + days * 86400000).toISOString();
-      const r = await gapi(`https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=${max}&orderBy=startTime&singleEvents=true&timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}`);
-      return { events: (r.items||[]).map(ev=>({ summary: ev.summary, start: ev.start, end: ev.end, location: ev.location })) };
-    }
-    case 'list_tasks': {
-      const max = args.max_results || 10;
-      const lists = await gapi('https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=1');
-      const listId = lists.items[0].id;
-      const r = await gapi(`https://tasks.googleapis.com/tasks/v1/lists/${listId}/tasks?maxResults=${max}&showCompleted=false`);
-      return { tasks: (r.items||[]).map(t=>({ title: t.title, due: t.due, notes: t.notes, status: t.status })) };
-    }
-    case 'create_calendar_event': {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const body = {
-        summary: args.summary,
-        start: { dateTime: args.start_datetime, timeZone: tz },
-        end: { dateTime: args.end_datetime, timeZone: tz }
-      };
-      if (args.description) body.description = args.description;
-      if (args.location) body.location = args.location;
-      const r = await gapiPost('https://www.googleapis.com/calendar/v3/calendars/primary/events', body);
-      loadCalendar();
-      return { success: true, event_id: r.id, link: r.htmlLink };
-    }
-    case 'send_email': {
-      const raw = btoa(unescape(encodeURIComponent(
-        `To: ${args.to}\r\nSubject: ${args.subject}\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n${args.body}`
-      ))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-      const r = await gapiPost('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', { raw });
-      loadGmail();
-      return { success: true, message_id: r.id };
-    }
-    case 'create_task': {
-      const lists = await gapi('https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=1');
-      const listId = lists.items[0].id;
-      const body = { title: args.title };
-      if (args.notes) body.notes = args.notes;
-      if (args.due) body.due = new Date(args.due + 'T00:00:00').toISOString();
-      const r = await gapiPost(`https://tasks.googleapis.com/tasks/v1/lists/${listId}/tasks`, body);
-      loadTasks();
-      return { success: true, task_id: r.id };
-    }
-    default:
-      return { error: `Unknown tool: ${name}` };
+function openGemini() {
+  window.location.href = geminiUrl();
+}
+
+function initGeminiPanel() {
+  const platform = detectPlatform();
+  const note = document.getElementById('gemini-platform');
+  if (platform === 'android') {
+    note.textContent = 'Opens Gemini app · falls back to browser';
+  } else if (platform === 'ios') {
+    note.textContent = 'Opens in Safari · may hand off to Gemini app';
+  } else {
+    note.textContent = 'Opens gemini.google.com';
   }
 }
 
-async function sendChat() {
-  const input = document.getElementById('chat-input');
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = '';
-  autoResizeInput();
-  appendMessage('user', text);
-  chatHistory.push({ role: 'user', parts: [{ text }] });
-  document.getElementById('btn-send').disabled = true;
-  await runGeminiTurn();
-  document.getElementById('btn-send').disabled = false;
-}
-
-async function runGeminiTurn() {
-  const systemInstruction = {
-    parts: [{
-      text: `You are a helpful personal assistant integrated into cyber-dash, a mobile dashboard.
-You have tool access to the user's Gmail, Google Calendar, and Google Tasks.
-Current date/time: ${new Date().toLocaleString()} (timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}).
-Be concise. When taking actions, confirm what you did. When listing data, present it clearly.
-If asked about emails, schedule, or tasks — use the appropriate tool to fetch fresh data.`
-    }]
-  };
-
-  try {
-    // Auth via OAuth Bearer token — same method Gemini CLI uses, no API key needed
-    const resp = await fetch(GEMINI_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      },
-      body: JSON.stringify({
-        system_instruction: systemInstruction,
-        contents: chatHistory,
-        tools: GEMINI_TOOLS,
-        tool_config: { function_calling_config: { mode: 'AUTO' } },
-        generation_config: { max_output_tokens: 1024, temperature: 0.7 }
-      })
-    });
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      appendMessage('error', `Gemini error ${resp.status}: ${err.error?.message || resp.statusText}`);
-      return;
-    }
-
-    const data = await resp.json();
-    const candidate = data.candidates?.[0];
-    if (!candidate) { appendMessage('error', 'No response from Gemini.'); return; }
-
-    const parts = candidate.content?.parts || [];
-    chatHistory.push({ role: 'model', parts: candidate.content.parts });
-
-    const fnCalls = parts.filter(p => p.functionCall);
-    const textParts = parts.filter(p => p.text);
-
-    textParts.forEach(p => { if (p.text?.trim()) appendMessage('gemini', p.text.trim()); });
-
-    if (fnCalls.length > 0) {
-      const toolResults = [];
-      for (const part of fnCalls) {
-        const { name, args } = part.functionCall;
-        appendMessage('tool', `→ ${name}(${JSON.stringify(args)})`);
-        try {
-          const result = await executeTool(name, args || {});
-          toolResults.push({ functionResponse: { name, response: result } });
-        } catch(e) {
-          toolResults.push({ functionResponse: { name, response: { error: e.message } } });
-        }
-      }
-      chatHistory.push({ role: 'user', parts: toolResults });
-      await runGeminiTurn();
-    }
-  } catch(e) {
-    appendMessage('error', `Network error: ${e.message}`);
-  }
-}
-
-function appendMessage(type, text) {
-  const container = document.getElementById('chat-messages');
-  const div = document.createElement('div');
-  div.className = `msg msg-${type}`;
-  div.textContent = text;
-  container.appendChild(div);
-  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
-}
-
-function chatKeydown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
-}
-
-function autoResizeInput() {
-  const el = document.getElementById('chat-input');
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
-}
-
 // ─────────────────────────────────────────────
-// GOOGLE API HELPERS
+// GOOGLE API HELPER
 // ─────────────────────────────────────────────
 async function gapi(url) {
   const r = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-  if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error?.message || r.statusText); }
-  return r.json();
-}
-
-async function gapiPost(url, body) {
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
   if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error?.message || r.statusText); }
   return r.json();
 }
