@@ -87,6 +87,19 @@
     .refresh-btn { font-size: 0.75rem; color: #7cf4; background: none; border: none; cursor: pointer; float: right; margin-top: -2px; }
     .refresh-btn:hover { color: #7cf; }
 
+    /* ── Pull to refresh ── */
+    #ptr {
+      display: flex; align-items: center; justify-content: center;
+      height: 0; overflow: hidden; gap: 8px; color: #7cf; font-size: 0.75rem;
+    }
+    #ptr.releasing { transition: height 0.25s ease; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ptr-spinner {
+      width: 16px; height: 16px; border: 2px solid #7cf3;
+      border-top-color: #7cf; border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
     /* ── Gemini launcher panel ── */
     #panel-gemini {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -122,6 +135,7 @@
   <div id="panels">
     <!-- Panel 0: Dashboard -->
     <div class="panel" id="panel-dash">
+      <div id="ptr"><div class="ptr-spinner"></div><span id="ptr-label"></span></div>
       <div class="panel-title">dashboard</div>
 
       <div class="card">
@@ -152,7 +166,7 @@
 
   <div id="nav">
     <div class="dot active" onclick="goToPanel(0)"></div>
-    <div class="dot" onclick="goToPanel(1)"></div>
+    <div class="dot" onclick="openGemini()"></div>
   </div>
 </div>
 
@@ -241,7 +255,7 @@ function signOut() {
 }
 
 // ─────────────────────────────────────────────
-// SWIPE
+// SWIPE (horizontal — panel nav / Gemini launch)
 // ─────────────────────────────────────────────
 let touchStartX = 0, touchStartY = 0, isSwiping = false;
 
@@ -261,7 +275,9 @@ document.addEventListener('touchend', e => {
   if (!isSwiping) return;
   const dx = e.changedTouches[0].clientX - touchStartX;
   if (Math.abs(dx) > 50) {
-    if (dx < 0 && currentPanel === 0) goToPanel(1);
+    // Swipe left from dashboard → open Gemini as Safari modal (SVC on iOS)
+    // We stay on panel 0; the modal closes and returns us here automatically
+    if (dx < 0 && currentPanel === 0) openGemini();
     else if (dx > 0 && currentPanel === 1) goToPanel(0);
   }
 });
@@ -271,6 +287,56 @@ function goToPanel(idx) {
   document.getElementById('panels').style.transform = `translateX(-${idx * 50}%)`;
   document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === idx));
 }
+
+// ─────────────────────────────────────────────
+// PULL TO REFRESH
+// ─────────────────────────────────────────────
+const dashPanel = document.getElementById('panel-dash');
+const ptrEl = document.getElementById('ptr');
+const ptrLabel = document.getElementById('ptr-label');
+const PTR_THRESHOLD = 60;
+let ptrState = 'idle'; // idle | watching | pulling
+let ptrStartX = 0, ptrStartY = 0, ptrDist = 0;
+
+dashPanel.addEventListener('touchstart', e => {
+  if (dashPanel.scrollTop <= 0) {
+    ptrStartX = e.touches[0].clientX;
+    ptrStartY = e.touches[0].clientY;
+    ptrState = 'watching';
+    ptrDist = 0;
+  }
+}, { passive: true });
+
+dashPanel.addEventListener('touchmove', e => {
+  if (ptrState === 'idle') return;
+  const dy = e.touches[0].clientY - ptrStartY;
+  const dx = Math.abs(e.touches[0].clientX - ptrStartX);
+
+  if (ptrState === 'watching') {
+    if (dx > 10) { ptrState = 'idle'; return; } // horizontal — let swipe handler take it
+    if (dy > 8) ptrState = 'pulling'; else return;
+  }
+
+  ptrDist = Math.max(0, Math.min(dy * 0.45, PTR_THRESHOLD * 1.2));
+  ptrEl.style.height = ptrDist + 'px';
+  ptrLabel.textContent = ptrDist >= PTR_THRESHOLD ? 'release to refresh' : 'pull to refresh';
+}, { passive: true });
+
+dashPanel.addEventListener('touchend', () => {
+  if (ptrState !== 'pulling') { ptrState = 'idle'; return; }
+  ptrState = 'idle';
+  ptrEl.classList.add('releasing');
+  if (ptrDist >= PTR_THRESHOLD) {
+    ptrEl.style.height = '44px';
+    ptrLabel.textContent = 'refreshing…';
+    loadAll();
+    setTimeout(() => { ptrEl.style.height = '0'; setTimeout(() => ptrEl.classList.remove('releasing'), 300); }, 1200);
+  } else {
+    ptrEl.style.height = '0';
+    setTimeout(() => ptrEl.classList.remove('releasing'), 300);
+  }
+  ptrDist = 0;
+});
 
 // ─────────────────────────────────────────────
 // DASHBOARD — direct Google API calls
@@ -370,30 +436,20 @@ function detectPlatform() {
   return 'desktop';
 }
 
-function geminiUrl() {
-  const platform = detectPlatform();
-  if (platform === 'android') {
-    // Android intent URL: opens Gemini app if installed, falls back to browser
-    return 'intent://gemini.google.com/app#Intent;scheme=https;package=com.google.android.apps.bard;S.browser_fallback_url=https%3A%2F%2Fgemini.google.com%2Fapp;end';
-  }
-  // iOS and desktop: open web — Safari may hand off to the Gemini app
-  return 'https://gemini.google.com/app';
-}
-
 function openGemini() {
-  window.location.href = geminiUrl();
+  // window.open with _blank opens a Safari View Controller on iOS —
+  // a modal browser that dismisses back to this page when the user taps Done.
+  // On Android/desktop it opens a new tab; closing it returns here too.
+  // We never leave panel 0, so no snap-back logic needed.
+  window.open('https://gemini.google.com/app', '_blank');
 }
 
 function initGeminiPanel() {
   const platform = detectPlatform();
   const note = document.getElementById('gemini-platform');
-  if (platform === 'android') {
-    note.textContent = 'Opens Gemini app · falls back to browser';
-  } else if (platform === 'ios') {
-    note.textContent = 'Opens in Safari · may hand off to Gemini app';
-  } else {
-    note.textContent = 'Opens gemini.google.com';
-  }
+  note.textContent = platform === 'ios'
+    ? 'Opens as Safari modal · tap Done to return'
+    : platform === 'android' ? 'Opens in new tab' : 'Opens gemini.google.com';
 }
 
 // ─────────────────────────────────────────────
