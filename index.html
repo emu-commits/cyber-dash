@@ -490,7 +490,7 @@ function loadAll() { loadMarkets(); loadWeather(); loadGmail(); loadCalendar(); 
 const MARKET_ASSETS = [
   { label: 'BTC', cgId: 'bitcoin',                                     fmt: p => '$' + (p >= 1000 ? (p/1000).toFixed(1)+'k' : p.toFixed(0)) },
   { label: 'S&P', cgId: 'ishares-core-s-p-500-etf-ondo-tokenized-etf', fmt: p => '$' + p.toFixed(2) },
-  { label: '10Y', cgId: 'superstate-short-duration-us-government-securities-fund', fmt: p => '$' + p.toFixed(2) },
+  { label: '10Y', cgId: 'superstate-short-duration-us-government-securities-fund-ustb', fmt: p => '$' + p.toFixed(2) },
 ];
 
 async function loadMarkets() {
