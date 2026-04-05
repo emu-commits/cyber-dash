@@ -529,16 +529,15 @@ async function fetchCoinGecko(coinId) {
 }
 
 async function fetchTreasury10Y() {
-  const r = await fetch(
-    'https://fiscaldata.treasury.gov/api/public/dataset/daily-treasury-rates/data/' +
-    '?fields=record_date,d10_yr&sort=-record_date&page[size]=10'
-  );
-  if (!r.ok) throw new Error('Treasury ' + r.status);
-  const d = await r.json();
-  const rows = d.data;
-  if (!rows?.length) throw new Error('no treasury data');
-  // API returns newest-first; reverse so sparkline goes oldest→newest
-  const prices = rows.slice(0, 7).reverse().map(row => parseFloat(row.d10_yr));
+  // FRED CSV download — no key required, direct file download with CORS
+  const r = await fetch('https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10');
+  if (!r.ok) throw new Error('FRED ' + r.status);
+  const text = await r.text();
+  const prices = text.trim().split('\n')
+    .slice(1)                          // skip header row
+    .filter(l => !l.endsWith(',.'))    // skip days with missing data (marked as ".")
+    .slice(-7)
+    .map(l => parseFloat(l.split(',')[1]));
   if (prices.length < 2) throw new Error('insufficient data');
   return { prices };
 }
