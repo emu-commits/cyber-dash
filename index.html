@@ -4,135 +4,138 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>cyber-dash</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:   #110204;  --fg:   #dfd0a8;  --dim:  #4a2418;
-      --hi:   #f0e090;  --bdr:  #2a1008;  --up:   #70c830;
-      --dn:   #c84020;  --rain: #4880c0;  --scr:  #090102;
-      --font: 'Courier New','Courier',monospace;
+      --bg:  #110204;  --fg:  #dfd0a8;  --dim: #4a2418;
+      --hi:  #f0e090;  --bdr: #2a1008;  --up:  #70c830;  --dn: #c84020;
+      --font:'VT323','Courier New',monospace;
     }
     @media (prefers-color-scheme: light) {
       :root {
         --bg:  #e8e0c8;  --fg:  #140200;  --dim: #7a5020;
-        --hi:  #060000;  --bdr: #c0a840;  --up:  #1a5408;
-        --dn:  #800c00;  --rain:#1c3c68;  --scr: #d8d0b8;
+        --hi:  #060000;  --bdr: #c0a840;  --up:  #1a5408;  --dn: #800c00;
       }
     }
     *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:var(--font);-webkit-text-size-adjust:100%}
+    html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:18px;line-height:1.25;-webkit-text-size-adjust:100%}
 
     /* ── AUTH ─────────────────────────────── */
-    #auth-screen{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;height:100dvh;padding:24px}
-    .a-wrap{width:100%;max-width:320px}
-    .a-logo{font-size:15px;letter-spacing:6px;color:var(--hi);text-align:center;margin-bottom:2px}
-    .a-sub{font-size:8px;letter-spacing:3px;color:var(--dim);text-align:center;margin-bottom:6px}
-    .a-sep{height:1px;background:var(--bdr);margin-bottom:18px}
-    .a-row{font-size:11px;line-height:2.2;color:var(--dim)}
+    #auth-screen{display:flex;align-items:center;justify-content:center;height:100dvh;padding:24px}
+    .a-wrap{width:100%;max-width:340px}
+    .a-logo{font-size:30px;letter-spacing:4px;color:var(--hi);text-align:center}
+    .a-sub{font-size:18px;letter-spacing:2px;color:var(--dim);text-align:center;margin-bottom:4px}
+    .a-sep{font-size:16px;color:var(--dim);text-align:center;letter-spacing:3px;margin-bottom:12px}
+    .a-row{font-size:19px;line-height:1.8;color:var(--dim)}
     .a-row b{color:var(--fg);font-weight:normal}
-    #btn-login{display:block;width:100%;padding:13px;margin-top:22px;font-family:var(--font);font-size:12px;letter-spacing:4px;color:var(--hi);background:transparent;border:1px solid var(--fg);cursor:pointer}
+    #btn-login{display:block;width:100%;padding:10px;margin-top:16px;font-family:var(--font);font-size:22px;letter-spacing:4px;color:var(--hi);background:transparent;border:1px solid var(--fg);cursor:pointer}
     #btn-login:active{background:var(--bdr)}
-    #auth-error{font-size:9px;color:var(--dn);text-align:center;margin-top:14px;min-height:16px}
+    #auth-error{font-size:17px;color:var(--dn);text-align:center;margin-top:10px;min-height:20px}
     @keyframes blink{50%{opacity:0}} .blink{animation:blink 1s step-end infinite}
 
     /* ── APP ─────────────────────────────── */
-    #app{display:none;position:relative;z-index:10;height:100dvh;overflow:hidden}
+    #app{display:none;height:100dvh;overflow:hidden}
     #panels{display:flex;width:200%;height:100%;transition:transform 0.3s cubic-bezier(.4,0,.2,1)}
     .panel{width:50%;height:100%;display:flex;flex-direction:column;overflow:hidden;
       padding-top:env(safe-area-inset-top,44px);
-      padding-bottom:calc(env(safe-area-inset-bottom,10px) + 20px)}
+      padding-bottom:calc(env(safe-area-inset-bottom,10px) + 14px)}
 
     /* ── PTR ─────────────────────────────── */
-    #ptr{flex-shrink:0;height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:8px;letter-spacing:3px;color:var(--dim)}
+    #ptr{flex-shrink:0;height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:16px;letter-spacing:3px;color:var(--dim)}
     #ptr.releasing{transition:height .25s ease}
 
     /* ── TICKER ──────────────────────────── */
-    #tkr{flex-shrink:0;height:26px;overflow:hidden;display:flex;align-items:center;background:var(--bg);border-bottom:1px solid var(--bdr)}
-    #tkr-t{display:inline-block;white-space:nowrap;font-size:11px;letter-spacing:2px;color:var(--fg);will-change:transform;animation:tscroll 36s linear infinite}
+    #tkr{flex-shrink:0;height:24px;overflow:hidden;display:flex;align-items:center;border-bottom:1px solid var(--bdr)}
+    #tkr-t{display:inline-block;white-space:nowrap;font-size:17px;letter-spacing:1px;color:var(--fg);will-change:transform;animation:tscroll 36s linear infinite}
     @keyframes tscroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
     /* ── DOT SEPARATOR ───────────────────── */
-    .sep{flex-shrink:0;height:11px;overflow:hidden;display:flex;align-items:center;padding:0 10px}
+    .sep{flex-shrink:0;height:10px;overflow:hidden;display:flex;align-items:center;padding:0 8px}
     .sep::after{content:'';display:block;flex:1;height:1px;
-      background:repeating-linear-gradient(90deg,var(--dim) 0,var(--dim) 2px,transparent 2px,transparent 9px)}
+      background:repeating-linear-gradient(90deg,var(--dim) 0,var(--dim) 2px,transparent 2px,transparent 8px)}
 
     /* ── SECTION HEAD ────────────────────── */
-    .sh{flex-shrink:0;height:26px;display:flex;align-items:center;gap:6px;padding:0 10px;font-size:11px;letter-spacing:2px;color:var(--dim)}
-    .sh-lbl{color:var(--fg);letter-spacing:5px;font-size:13px;font-weight:normal}
+    .sh{flex-shrink:0;height:22px;display:flex;align-items:center;gap:6px;padding:0 8px;font-size:16px;color:var(--dim)}
+    .sh-lbl{color:var(--fg);letter-spacing:4px;font-size:19px}
     .sh-line{flex:1;height:1px;background:var(--bdr)}
-    .sh-r{font-size:10px;color:var(--dim);letter-spacing:1px}
-    .sh-btn{font-family:var(--font);font-size:10px;letter-spacing:1px;color:var(--dim);background:none;border:none;cursor:pointer;padding:0;margin-left:4px}
+    .sh-r{font-size:15px;color:var(--dim)}
+    .sh-btn{font-family:var(--font);font-size:15px;color:var(--dim);background:none;border:none;cursor:pointer;padding:0;margin-left:4px}
     .sh-btn:active{color:var(--dn)}
+
+    /* ── ASCII CHARTS ────────────────────── */
+    pre.ac{margin:0;font-family:var(--font);font-size:17px;line-height:1.1;overflow:hidden;letter-spacing:0;padding:0 8px}
+    pre.ac.up{color:var(--up)} pre.ac.dn{color:var(--dn)} pre.ac.neu{color:var(--fg)}
 
     /* ── MARKETS ─────────────────────────── */
     #sec-mkt{flex-shrink:0}
     .mk-2col{display:flex}
-    .mk-col{flex:1;min-width:0;display:flex;flex-direction:column}
+    .mk-col{flex:1;min-width:0}
     .mk-col+.mk-col{border-left:1px solid var(--bdr)}
-    .mk-row{display:flex;align-items:center;padding:0 8px;height:24px;gap:5px}
-    .mk-lbl{font-size:13px;letter-spacing:4px;color:var(--dim);width:34px;flex-shrink:0}
-    .mk-slash{flex:1;height:1px;background:var(--bdr)}
-    .mk-price{font-size:18px;color:var(--hi);flex-shrink:0;letter-spacing:0}
-    .mk-pct{font-size:12px;width:58px;text-align:right;flex-shrink:0}
+    .mk-row{display:flex;align-items:baseline;padding:1px 8px;gap:4px}
+    .mk-lbl{font-size:16px;letter-spacing:3px;color:var(--dim);flex-shrink:0}
+    .mk-dashes{flex:1;overflow:hidden;color:var(--bdr);white-space:nowrap;padding:0 3px;font-size:15px}
+    .mk-price{font-size:20px;color:var(--hi);flex-shrink:0}
+    .mk-pct{font-size:15px;flex-shrink:0}
     .mk-pct.up{color:var(--up)} .mk-pct.dn{color:var(--dn)}
-    .mk-err{font-size:10px;color:var(--dim);padding:0 8px 4px}
-    .mk-wave{flex-shrink:0;height:68px;padding:0 8px}
-    .mk-wave svg{width:100%;height:100%;display:block}
-    .mk-wave.sm{height:60px}
+    .mk-err{font-size:15px;color:var(--dim);padding:0 8px}
 
     /* ── WEATHER ─────────────────────────── */
     #sec-wx{flex-shrink:0}
     .wx-2col{display:flex}
-    .wx-col{flex:1;min-width:0;display:flex;flex-direction:column}
+    .wx-col{flex:1;min-width:0;overflow:hidden}
     .wx-col+.wx-col{border-left:1px solid var(--bdr)}
-    .wx-wave{flex-shrink:0;height:44px;padding:0 8px}
-    .wx-wave svg{width:100%;height:100%;display:block}
-    .wx-hrs{display:flex;padding:2px 8px 3px;align-items:flex-start}
-    .wx-h{flex:1;display:flex;flex-direction:column;align-items:center}
-    .wx-ht{font-size:12px;color:var(--hi);line-height:1.4}
-    .wx-hl{font-size:9px;color:var(--dim);line-height:1.3}
-    .wx-hp{font-size:9px;color:var(--fg);line-height:1.3}
-    .wx-days{display:flex;padding:2px 8px 3px;align-items:flex-start}
-    .wx-d{flex:1;display:flex;flex-direction:column;align-items:center}
-    .wx-dn{font-size:9px;color:var(--dim);line-height:1.4}
-    .wx-dh{font-size:12px;color:var(--hi);line-height:1.2}
-    .wx-dl{font-size:10px;color:var(--dim);line-height:1.2}
-    .wx-dp{font-size:9px;color:var(--fg);line-height:1.3}
-    .wx-ft{font-size:9px;color:var(--dim);text-align:right;padding:2px 10px 2px;letter-spacing:1px}
+    .wx-col-hdr{font-size:14px;letter-spacing:3px;color:var(--dim);padding:1px 8px 0}
+    .wx-slots{display:flex;padding:0 8px 2px}
+    .wx-slot{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
+    .wx-t{font-size:16px;color:var(--hi);line-height:1.2}
+    .wx-lo{font-size:13px;color:var(--dim);line-height:1.15}
+    .wx-l{font-size:13px;color:var(--dim);line-height:1.15}
+    .wx-p{font-size:13px;color:var(--fg);line-height:1.15}
+    .wx-ft{font-size:12px;color:var(--dim);text-align:right;padding:0 8px 1px;letter-spacing:1px}
 
-    /* ── DATA FEED ───────────────────────── */
+    /* ── DATA FEED (mail only) ───────────── */
     #sec-data{flex:1;min-height:0;display:flex;flex-direction:column}
     #feed-win{flex:1;min-height:0;overflow:hidden;position:relative}
-    #feed-body{position:absolute;top:0;left:0;right:0;padding:0 0 8px;will-change:transform}
-    .f-lbl{font-size:11px;letter-spacing:2px;color:var(--dim);padding:3px 10px 2px;display:block}
-    .f-row{display:flex;align-items:baseline;padding:2px 10px;font-size:13px;line-height:1.7;gap:6px;color:var(--fg)}
+    #feed-body{position:absolute;top:0;left:0;right:0;padding:0 0 4px;will-change:transform}
+    .f-lbl{font-size:14px;letter-spacing:2px;color:var(--dim);padding:2px 8px 0;display:block}
+    .f-row{display:flex;align-items:baseline;padding:0 8px;font-size:16px;line-height:1.5;gap:5px;color:var(--fg)}
     .f-row.hi{color:var(--hi)}
-    .f-ic{color:var(--dim);flex-shrink:0;font-size:11px;width:14px}
+    .f-ic{color:var(--dim);flex-shrink:0;width:14px}
     .f-mn{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-    .f-dt{font-size:10px;color:var(--dim);flex-shrink:0;letter-spacing:1px}
-    .f-gap{height:4px}
+    .f-gap{height:2px}
 
-    /* ── PROGRESS BARS ───────────────────── */
-    #prog-section{flex-shrink:0;padding:4px 0 2px}
-    .pb-row{display:flex;align-items:center;padding:2px 10px;gap:8px;height:22px}
-    .pb-lbl{font-size:11px;letter-spacing:2px;color:var(--dim);width:52px;flex-shrink:0}
-    .pb-track{flex:1;height:9px;background:var(--scr);position:relative;overflow:hidden}
-    .pb-fill{height:100%;background:var(--fg);transition:width 1.2s ease}
-    .pb-val{font-size:11px;color:var(--fg);width:44px;text-align:right;flex-shrink:0;letter-spacing:0}
+    /* ── CAL + TASKS 2-COL ───────────────── */
+    #ct-wrap{flex-shrink:0}
+    .ct-2col{display:flex}
+    .ct-col{flex:1;min-width:0;overflow:hidden;padding:1px 8px 3px}
+    .ct-col+.ct-col{border-left:1px solid var(--bdr)}
+    .ct-hdr{font-size:13px;letter-spacing:2px;color:var(--dim);line-height:1.7;display:block}
+    .ct-row{font-size:15px;line-height:1.45;color:var(--fg);display:flex;gap:4px;align-items:baseline}
+    .ct-ic{color:var(--dim);flex-shrink:0;font-size:13px}
+    .ct-mn{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    .ct-dt{font-size:11px;color:var(--dim);flex-shrink:0}
+
+    /* ── PROGRESS BARS (ASCII) ───────────── */
+    #prog-section{flex-shrink:0;padding:1px 0}
+    .pb-row{display:flex;align-items:baseline;padding:0 8px;gap:5px;line-height:1.45}
+    .pb-lbl{color:var(--dim);width:52px;flex-shrink:0;font-size:13px;letter-spacing:1px}
+    .pb-bar{flex:1;color:var(--fg);overflow:hidden;white-space:nowrap;font-size:15px}
+    .pb-val{color:var(--dim);width:40px;text-align:right;flex-shrink:0;font-size:13px}
 
     /* ── NAV ─────────────────────────────── */
     #nav{position:fixed;bottom:calc(env(safe-area-inset-bottom,6px)+4px);left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:100}
-    .dot{width:5px;height:5px;border-radius:50%;background:var(--dim);display:block;text-decoration:none;cursor:pointer;transition:background .2s}
+    .dot{width:6px;height:6px;border-radius:50%;background:var(--dim);display:block;text-decoration:none;cursor:pointer;transition:background .2s}
     .dot.active{background:var(--fg)}
 
     /* ── GEMINI ──────────────────────────── */
-    #panel-gemini{align-items:center;justify-content:center;text-align:center;gap:20px}
-    .g-grid{font-size:9px;color:var(--dim);letter-spacing:3px;line-height:1.7;white-space:pre}
-    .g-sig{font-size:46px;color:var(--fg);line-height:1}
-    .g-lbl{font-size:9px;letter-spacing:5px;color:var(--dim)}
-    #btn-gem{padding:14px 36px;font-family:var(--font);font-size:12px;letter-spacing:4px;color:var(--hi);background:transparent;border:1px solid var(--fg);text-decoration:none;cursor:pointer;display:inline-block}
+    #panel-gemini{align-items:center;justify-content:center;text-align:center;gap:16px}
+    .g-grid{font-size:18px;color:var(--dim);line-height:1.5;white-space:pre}
+    .g-sig{font-size:52px;color:var(--fg);line-height:1}
+    .g-lbl{font-size:22px;letter-spacing:4px;color:var(--dim)}
+    #btn-gem{padding:12px 28px;font-family:var(--font);font-size:22px;letter-spacing:3px;color:var(--hi);background:transparent;border:1px solid var(--fg);text-decoration:none;cursor:pointer;display:inline-block}
     #btn-gem:active{background:var(--bdr)}
-    .g-note{font-size:8px;color:var(--dim);max-width:220px;line-height:2;letter-spacing:1px}
-    .sys-msg{padding:3px 10px;font-size:9px;color:var(--dim);letter-spacing:2px;line-height:2.2}
+    .g-note{font-size:17px;color:var(--dim);max-width:260px;line-height:1.6}
+    .sys-msg{padding:2px 8px;font-size:17px;color:var(--dim);letter-spacing:2px;line-height:1.8}
   </style>
 </head>
 <body>
@@ -142,7 +145,7 @@
   <div class="a-wrap">
     <div class="a-logo">&#9672; CYBER&#8209;DASH &#9672;</div>
     <div class="a-sub">SYS / ACCESS TERMINAL</div>
-    <div class="a-sep"></div>
+    <div class="a-sep">&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;</div>
     <div class="a-row">&#9658; PROTOCOL&#58;&#160;<b>OAUTH 2.0 READ-ONLY</b></div>
     <div class="a-row">&#9658; CHANNELS&#58;&#160;<b>GMAIL &#183; CAL &#183; TASKS</b></div>
     <div class="a-row">&#9658; INTEL&#58;&#160;<b>MARKETS &#183; WEATHER</b></div>
@@ -183,12 +186,19 @@
         <button class="sh-btn" onclick="signOut()">[ EXIT ]</button>
       </div>
       <div id="feed-win"><div id="feed-body"><div class="sys-msg">LOADING&#183;&#183;&#183;</div></div></div>
+      <div id="ct-wrap">
+        <div class="sep"></div>
+        <div class="ct-2col">
+          <div class="ct-col" id="cal-col"><span class="ct-hdr">CAL &#183;&#183;&#183;</span></div>
+          <div class="ct-col" id="tasks-col"><span class="ct-hdr">TASKS &#183;&#183;&#183;</span></div>
+        </div>
+      </div>
       <div id="prog-section">
-        <div class="sep" style="margin-bottom:3px"></div>
-        <div class="pb-row"><span class="pb-lbl">MAIL</span><div class="pb-track"><div class="pb-fill" id="pb0" style="width:0%"></div></div><span class="pb-val" id="pv0">&#8212;</span></div>
-        <div class="pb-row"><span class="pb-lbl">CAL</span><div class="pb-track"><div class="pb-fill" id="pb1" style="width:0%"></div></div><span class="pb-val" id="pv1">&#8212;</span></div>
-        <div class="pb-row"><span class="pb-lbl">TASKS</span><div class="pb-track"><div class="pb-fill" id="pb2" style="width:0%"></div></div><span class="pb-val" id="pv2">&#8212;</span></div>
-        <div class="pb-row"><span class="pb-lbl">UPTIME</span><div class="pb-track"><div class="pb-fill" id="pb3" style="width:0%"></div></div><span class="pb-val" id="pv3">&#8212;</span></div>
+        <div class="sep" style="margin-bottom:1px"></div>
+        <div class="pb-row"><span class="pb-lbl">MAIL</span><span class="pb-bar" id="pb0">&#8212;</span><span class="pb-val" id="pv0">&#8212;</span></div>
+        <div class="pb-row"><span class="pb-lbl">CAL</span><span class="pb-bar" id="pb1">&#8212;</span><span class="pb-val" id="pv1">&#8212;</span></div>
+        <div class="pb-row"><span class="pb-lbl">TASKS</span><span class="pb-bar" id="pb2">&#8212;</span><span class="pb-val" id="pv2">&#8212;</span></div>
+        <div class="pb-row"><span class="pb-lbl">UPTIME</span><span class="pb-bar" id="pb3">&#8212;</span><span class="pb-val" id="pv3">&#8212;</span></div>
       </div>
     </div>
   </div>
@@ -258,14 +268,13 @@ dp.addEventListener('touchstart',e=>{if(dp.scrollTop<=0){px=e.touches[0].clientX
 dp.addEventListener('touchmove',e=>{if(ps==='idle')return;const dy=e.touches[0].clientY-py,dx=Math.abs(e.touches[0].clientX-px);if(ps==='watching'){if(dx>10){ps='idle';return;}if(dy>8)ps='pulling';else return;}pd=Math.max(0,Math.min(dy*0.45,PTR*1.2));pE.style.height=pd+'px';pL.textContent=pd>=PTR?'RELEASE TO SYNC':'PULL TO SYNC';},{passive:true});
 dp.addEventListener('touchend',()=>{if(ps!=='pulling'){ps='idle';return;}ps='idle';pE.classList.add('releasing');if(pd>=PTR){pE.style.height='28px';pL.textContent='SYNCING...';loadAll();setTimeout(()=>{pE.style.height='0';setTimeout(()=>pE.classList.remove('releasing'),300);},1500);}else{pE.style.height='0';setTimeout(()=>pE.classList.remove('releasing'),300);}pd=0;});
 
-// FEED
-const fd={mail:null,cal:null,tasks:null};let ft=null;
-function updFeed(){
+// FEED (mail only)
+let ft=null;
+function updFeed(mailHtml){
   const el=document.getElementById('feed-body');if(!el)return;
-  let h=(fd.mail||'')+(fd.cal||'')+(fd.tasks||'');
-  if(!h)h='<div class="sys-msg">LOADING...</div>';
   el.style.transition='none';el.style.transform='translateY(0)';
-  el.innerHTML=h;clearTimeout(ft);ft=setTimeout(startScroll,1000);
+  el.innerHTML=mailHtml||'<div class="sys-msg">LOADING...</div>';
+  clearTimeout(ft);ft=setTimeout(startScroll,1000);
 }
 function startScroll(){
   const c=document.getElementById('feed-body'),w=document.getElementById('feed-win');
@@ -286,37 +295,39 @@ function updateTicker(){
 }
 setInterval(updateTicker,60000);
 
-// PROGRESS BARS
+// ASCII PROGRESS BARS
 const pbStats={mail:0,cal:0,tasks:0};
 function setPB(i,pct,label){
-  const f=document.getElementById('pb'+i),v=document.getElementById('pv'+i);
-  if(f)f.style.width=Math.min(100,pct)+'%';
-  if(v)v.textContent=label;
+  const bar=document.getElementById('pb'+i),val=document.getElementById('pv'+i);
+  if(!bar||!val)return;
+  const W=14,filled=Math.round(Math.min(100,pct)/100*W);
+  bar.textContent='\u2588'.repeat(filled)+'\u2591'.repeat(W-filled);
+  val.textContent=label;
 }
 function updatePBs(){
   setPB(0,pbStats.mail,pbStats.mail+'%');
   setPB(1,pbStats.cal,pbStats.cal+'%');
   setPB(2,pbStats.tasks,pbStats.tasks+'%');
-  const uptimePct=Math.min(99,Math.round((Date.now()-T0)/864000));
-  setPB(3,uptimePct,Math.round((Date.now()-T0)/1000)+'s');
+  const up=Math.min(99,Math.round((Date.now()-T0)/864000));
+  setPB(3,up,Math.round((Date.now()-T0)/1000)+'s');
 }
 
 function loadAll(){
-  fd.mail='<div class="f-gap"></div><div class="f-lbl">MAIL \u00b7\u00b7\u00b7</div>';
-  fd.cal='<div class="f-gap"></div><div class="f-lbl">CAL \u00b7\u00b7\u00b7</div>';
-  fd.tasks='<div class="f-gap"></div><div class="f-lbl">TASKS \u00b7\u00b7\u00b7</div>';
-  updFeed();loadMarkets();loadWeather();loadGmail();loadCalendar();loadTasks();
+  updFeed('<div class="sys-msg">MAIL \u00b7\u00b7\u00b7</div>');
+  document.getElementById('cal-col').innerHTML='<span class="ct-hdr">CAL \u00b7\u00b7\u00b7</span>';
+  document.getElementById('tasks-col').innerHTML='<span class="ct-hdr">TASKS \u00b7\u00b7\u00b7</span>';
+  loadMarkets();loadWeather();loadGmail();loadCalendar();loadTasks();
 }
 
 // GMAIL
 async function loadGmail(){
   try{
     const r=await gapi('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&labelIds=INBOX');
-    if(!r.messages?.length){fd.mail='<div class="f-gap"></div><div class="f-lbl">MAIL // INBOX EMPTY</div>';updFeed();return;}
+    if(!r.messages?.length){updFeed('<div class="f-lbl">MAIL // INBOX EMPTY</div>');return;}
     const details=await Promise.all(r.messages.slice(0,8).map(m=>gapi(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`)));
     const unread=details.filter(m=>(m.labelIds||[]).includes('UNREAD')).length;
     pbStats.mail=Math.round(unread/details.length*100);
-    let h=`<div class="f-gap"></div><div class="f-lbl">MAIL // ${unread} UNREAD / ${details.length} MESSAGES</div>`;
+    let h=`<div class="f-lbl">MAIL // ${unread} UNREAD / ${details.length} MSG</div>`;
     h+=details.map(msg=>{
       const hdrs=Object.fromEntries((msg.payload?.headers||[]).map(hh=>[hh.name,hh.value]));
       const from=(hdrs.From||'').replace(/<[^>]+>/,'').replace(/"/g,'').trim();
@@ -324,28 +335,29 @@ async function loadGmail(){
       const isU=(msg.labelIds||[]).includes('UNREAD');
       return `<div class="f-row${isU?' hi':''}"><span class="f-ic">${isU?'\u25c8':'\u00b7'}</span><span class="f-mn">${esc(from)} \u2014 ${esc(subj)}</span></div>`;
     }).join('');
-    fd.mail=h;
-  }catch(e){fd.mail=`<div class="f-gap"></div><div class="f-lbl">MAIL // ERR</div><div class="f-row"><span class="f-mn">${esc(e.message)}</span></div>`;}
-  updatePBs();updFeed();
+    updFeed(h);
+  }catch(e){updFeed(`<div class="f-lbl">MAIL // ERR: ${esc(e.message)}</div>`);}
+  updatePBs();
 }
 
 // CALENDAR
 async function loadCalendar(){
+  const el=document.getElementById('cal-col');
   try{
     const now=new Date().toISOString(),end=new Date(Date.now()+7*86400000).toISOString();
-    const r=await gapi(`https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=10&orderBy=startTime&singleEvents=true&timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}`);
+    const r=await gapi(`https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=8&orderBy=startTime&singleEvents=true&timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}`);
     const items=r.items||[];
     pbStats.cal=Math.min(100,items.length*10);
-    if(!items.length){fd.cal='<div class="f-gap"></div><div class="f-lbl">CAL // ALL CLEAR</div>';updatePBs();updFeed();return;}
-    let h=`<div class="f-gap"></div><div class="f-lbl">CAL // ${items.length} UPCOMING</div>`;
+    if(!items.length){el.innerHTML='<span class="ct-hdr">CAL // CLEAR</span>';updatePBs();return;}
+    let h=`<span class="ct-hdr">CAL // ${items.length}</span>`;
     h+=items.map(ev=>{
       const start=ev.start?.dateTime?new Date(ev.start.dateTime):(ev.start?.date?new Date(ev.start.date+'T00:00:00'):null);
       const ts=start?fmtCal(start):'';
-      return `<div class="f-row"><span class="f-ic">\u25b8</span><span class="f-dt">${esc(ts)}</span><span class="f-mn">\u00a0${esc(ev.summary||'(no title)')}</span></div>`;
+      return `<div class="ct-row"><span class="ct-ic">\u25b8</span><span class="ct-mn">${esc(ev.summary||'?')}</span>${ts?`<span class="ct-dt">${esc(ts)}</span>`:''}</div>`;
     }).join('');
-    fd.cal=h;
-  }catch(e){fd.cal=`<div class="f-gap"></div><div class="f-lbl">CAL // ERR</div><div class="f-row"><span class="f-mn">${esc(e.message)}</span></div>`;}
-  updatePBs();updFeed();
+    el.innerHTML=h;
+  }catch(e){el.innerHTML=`<span class="ct-hdr">CAL ERR</span><div class="ct-row"><span class="ct-mn">${esc(e.message)}</span></div>`;}
+  updatePBs();
 }
 function fmtCal(d){
   const t=new Date();t.setHours(0,0,0,0);const dt=new Date(d);dt.setHours(0,0,0,0);
@@ -356,21 +368,22 @@ function fmtCal(d){
 
 // TASKS
 async function loadTasks(){
+  const el=document.getElementById('tasks-col');
   try{
     const lists=await gapi('https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=1');
-    if(!lists.items?.length){fd.tasks='';updatePBs();updFeed();return;}
-    const r=await gapi(`https://tasks.googleapis.com/tasks/v1/lists/${lists.items[0].id}/tasks?maxResults=15&showCompleted=false&showHidden=false`);
+    if(!lists.items?.length){el.innerHTML='<span class="ct-hdr">TASKS // 0</span>';updatePBs();return;}
+    const r=await gapi(`https://tasks.googleapis.com/tasks/v1/lists/${lists.items[0].id}/tasks?maxResults=12&showCompleted=false&showHidden=false`);
     const items=r.items||[];
     pbStats.tasks=Math.min(100,items.length*7);
-    if(!items.length){fd.tasks='<div class="f-gap"></div><div class="f-lbl">TASKS // ALL CLEAR</div>';updatePBs();updFeed();return;}
-    let h=`<div class="f-gap"></div><div class="f-lbl">TASKS // ${items.length} ACTIVE</div>`;
+    if(!items.length){el.innerHTML='<span class="ct-hdr">TASKS // CLEAR</span>';updatePBs();return;}
+    let h=`<span class="ct-hdr">TASKS // ${items.length}</span>`;
     h+=items.map(t=>{
       const due=t.due?new Date(t.due).toLocaleDateString('en',{month:'short',day:'numeric'}).toUpperCase():'';
-      return `<div class="f-row"><span class="f-ic">\u25a1</span><span class="f-mn">${esc(t.title||'(no title)')}</span>${due?`<span class="f-dt">${esc(due)}</span>`:''}</div>`;
+      return `<div class="ct-row"><span class="ct-ic">\u25a1</span><span class="ct-mn">${esc(t.title||'?')}</span>${due?`<span class="ct-dt">${esc(due)}</span>`:''}</div>`;
     }).join('');
-    fd.tasks=h;
-  }catch(e){fd.tasks=`<div class="f-gap"></div><div class="f-lbl">TASKS // ERR</div><div class="f-row"><span class="f-mn">${esc(e.message)}</span></div>`;}
-  updatePBs();updFeed();
+    el.innerHTML=h;
+  }catch(e){el.innerHTML=`<span class="ct-hdr">TASKS ERR</span><div class="ct-row"><span class="ct-mn">${esc(e.message)}</span></div>`;}
+  updatePBs();
 }
 
 // MARKETS
@@ -383,16 +396,15 @@ async function loadMarkets(){
   const el=document.getElementById('mkt-body');
   el.innerHTML='<div class="sys-msg">FETCHING\u00b7\u00b7\u00b7</div>';
   const res=await Promise.all(ASSETS.map(a=>fetchCG(a.cg).catch(e=>({error:e.message}))));
-  // BTC + S&P as two columns, TLT full width
-  function mkCard(a,d,sm){
-    if(d.error)return`<div class="mk-row"><span class="mk-lbl">${a.l}</span><span class="mk-slash"></span></div><div class="mk-err">${esc(d.error)}</div>`;
+  function mkCard(a,d,rows,barW){
+    if(d.error)return`<div class="mk-row"><span class="mk-lbl">${a.l}</span><span class="mk-err">${esc(d.error)}</span></div>`;
     const {prices}=d,last=prices[prices.length-1],pct=(last-prices[0])/prices[0]*100,up=pct>=0;
     td[a.tk]=a.fmt(last)+' '+(up?'+':'')+pct.toFixed(1)+'%';
-    return`<div class="mk-row"><span class="mk-lbl">${a.l}</span><span class="mk-slash"></span><span class="mk-price">${a.fmt(last)}</span><span class="mk-pct ${up?'up':'dn'}">\u00a0${(up?'+':'')+pct.toFixed(2)+'%'}</span></div>`
-      +`<div class="mk-wave${sm?' sm':''}">${mkBars(prices,up,sm?60:68)}</div>`;
+    return`<div class="mk-row"><span class="mk-lbl">${a.l}</span><span class="mk-dashes">${'\u00b7'.repeat(8)}</span><span class="mk-price">${a.fmt(last)}</span>\u00a0<span class="mk-pct ${up?'up':'dn'}">${(up?'+':'')+pct.toFixed(2)+'%'}</span></div>`
+      +mkAsciiBar(prices,up,rows,barW);
   }
-  let html=`<div class="mk-2col"><div class="mk-col">${mkCard(ASSETS[0],res[0],true)}</div><div class="mk-col">${mkCard(ASSETS[1],res[1],true)}</div></div>`;
-  html+=`<div class="sep"></div>${mkCard(ASSETS[2],res[2],false)}`;
+  let html=`<div class="mk-2col"><div class="mk-col">${mkCard(ASSETS[0],res[0],5,2)}</div><div class="mk-col">${mkCard(ASSETS[1],res[1],5,2)}</div></div>`;
+  html+=`<div class="sep"></div>${mkCard(ASSETS[2],res[2],5,3)}`;
   el.innerHTML=html;updateTicker();
 }
 async function fetchCG(id){
@@ -403,37 +415,14 @@ async function fetchCG(id){
   return{prices};
 }
 
-function mkBars(prices,up,H){
-  const W=300,PAD=4;
-  const isL=window.matchMedia('(prefers-color-scheme:light)').matches;
-  const upC  =isL?'#1a5408':'#70c830';
-  const dnC  =isL?'#800c00':'#c84020';
-  const dimC =isL?'rgba(80,50,0,0.25)':'rgba(200,160,80,0.2)';
-  const gridC=isL?'rgba(80,50,0,0.18)':'rgba(200,160,80,0.12)';
-  const bgC  =isL?'rgba(0,0,0,0.06)':'rgba(0,0,0,0.35)';
-  const mn=Math.min(...prices),mx=Math.max(...prices),rng=mx-mn||mx*0.005||1,n=prices.length;
-  const slot=(W-PAD*2)/n;
-  const barW=Math.max(3,Math.floor(slot*0.72));
-  // pixel-block bars: each bar drawn as stacked squares for chunky pixel look
-  const SQ=4; // square size
-  const bars=prices.map((p,i)=>{
-    const x=PAD+i*slot+(slot-barW)/2;
-    const yTop=H-PAD-((p-mn)/rng)*(H-PAD*2);
-    const barH=H-PAD-yTop;
-    const isBarUp=p>=prices[0];
-    const c=isBarUp?upC:dnC;
-    // draw bar as stacked pixel squares
-    const rects=[];
-    for(let y=H-PAD-SQ;y>=yTop;y-=SQ){
-      rects.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${SQ-1}" fill="${c}"/>`);
-    }
-    return rects.join('');
-  }).join('');
-  // horizontal grid lines
-  const grids=[0.33,0.66].map(f=>`<line x1="0" y1="${(H*f).toFixed(1)}" x2="${W}" y2="${(H*f).toFixed(1)}" stroke="${gridC}" stroke-width="1"/>`).join('');
-  // subtle dot grid behind bars
-  const dotGrid=`<pattern id="dg${up?'u':'d'}" width="8" height="8" patternUnits="userSpaceOnUse"><rect x="3.5" y="3.5" width="1" height="1" fill="${dimC}"/></pattern>`;
-  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs>${dotGrid}</defs><rect width="${W}" height="${H}" fill="${bgC}"/><rect width="${W}" height="${H}" fill="url(#dg${up?'u':'d'})"/>${grids}${bars}</svg>`;
+function mkAsciiBar(prices,up,rows,barW){
+  const n=prices.length;
+  const mn=Math.min(...prices),mx=Math.max(...prices),rng=mx-mn||mx*0.005||1;
+  const heights=prices.map(p=>Math.max(0,Math.round(((p-mn)/rng)*rows)));
+  const bCh='\u2588'.repeat(barW),eCh='\u00a0'.repeat(barW);
+  const lines=[];
+  for(let row=rows;row>=1;row--)lines.push(heights.map(h=>h>=row?bCh:eCh).join(''));
+  return`<pre class="ac ${up?'up':'dn'}">${lines.join('\n')}</pre>`;
 }
 
 // WEATHER
@@ -458,46 +447,31 @@ function renderWx(d,lat,lon,el){
   const si=Math.max(0,hT.findIndex(t=>t>=nowH));
   const hi=Array.from({length:6},(_,i)=>si+i).filter(i=>i<hT.length);
   const isL=window.matchMedia('(prefers-color-scheme:light)').matches;
-  const wC =isL?'rgba(20,2,0,0.85)':'rgba(223,208,168,0.9)';
-  const gC =isL?'rgba(80,50,0,0.18)':'rgba(200,160,80,0.12)';
-  const dC =isL?'rgba(80,50,0,0.22)':'rgba(200,160,80,0.18)';
-  const bgC=isL?'rgba(0,0,0,0.06)':'rgba(0,0,0,0.35)';
-  function mkColBars(temps,id){
-    const W=300,H=44,PAD=4,SQ=4,n=temps.length;
-    const mn=Math.min(...temps),mx=Math.max(...temps),rng=mx-mn||2;
-    const slot=(W-PAD*2)/n,barW=Math.max(3,Math.floor(slot*0.72));
-    const bars=temps.map((p,i)=>{
-      const yTop=H-PAD-((p-mn)/rng)*(H-PAD*2),x=PAD+i*slot+(slot-barW)/2;
-      const rects=[];
-      for(let y=H-PAD-SQ;y>=yTop;y-=SQ)rects.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${SQ-1}" fill="${wC}"/>`);
-      return rects.join('');
-    }).join('');
-    const grid=`<line x1="0" y1="${(H*0.5).toFixed(1)}" x2="${W}" y2="${(H*0.5).toFixed(1)}" stroke="${gC}" stroke-width="1"/>`;
-    return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><pattern id="${id}" width="8" height="8" patternUnits="userSpaceOnUse"><rect x="3.5" y="3.5" width="1" height="1" fill="${dC}"/></pattern></defs><rect width="${W}" height="${H}" fill="${bgC}"/><rect width="${W}" height="${H}" fill="url(#${id})"/>${grid}${bars}</svg>`;
+  function mkWxAscii(temps,barW){
+    const n=temps.length,mn=Math.min(...temps),mx=Math.max(...temps),rng=mx-mn||2;
+    const heights=temps.map(p=>Math.max(0,Math.round(((p-mn)/rng)*4)));
+    const bCh='\u2588'.repeat(barW),eCh='\u00a0'.repeat(barW);
+    const lines=[];
+    for(let row=4;row>=1;row--)lines.push(heights.map(h=>h>=row?bCh:eCh).join(''));
+    return`<pre class="ac neu">${lines.join('\n')}</pre>`;
   }
-  // Hourly column
-  const hrTemps=hi.map(i=>hTe[i]);
-  const hrSvg=mkColBars(hrTemps,'wxh');
   const DAYS=['SU','MO','TU','WE','TH','FR','SA'];
-  const hrHTML=hi.map((idx,pos)=>{
+  const hrTemps=hi.map(i=>hTe[i]);
+  const hrSlots=hi.map((idx,pos)=>{
     const h=parseInt(hT[idx].slice(11,13));
     const l=pos===0?'NOW':(h===0?'12A':h<12?h+'A':h===12?'12P':(h-12)+'P');
-    const pop=hP[idx]??0;
-    return`<div class="wx-h"><span class="wx-ht">${Math.round(hTe[idx])}\u00b0</span><span class="wx-hl">${l}</span><span class="wx-hp">${pop}%</span></div>`;
+    return`<div class="wx-slot"><span class="wx-t">${Math.round(hTe[idx])}\u00b0</span><span class="wx-l">${l}</span><span class="wx-p">${hP[idx]??0}%</span></div>`;
   }).join('');
-  // Daily column
   const dyMax=d.daily.temperature_2m_max.slice(0,7);
   const dyPop=d.daily.precipitation_probability_max||[];
-  const dySvg=mkColBars(dyMax,'wxd');
-  const dyHTML=d.daily.time.slice(0,7).map((t,i)=>{
+  const dySlots=d.daily.time.slice(0,7).map((t,i)=>{
     const nm=i===0?'TD':DAYS[new Date(t+'T12:00:00').getDay()];
-    const pop=dyPop[i]??0;
-    return`<div class="wx-d"><span class="wx-dn">${nm}</span><span class="wx-dh">${Math.round(d.daily.temperature_2m_max[i])}\u00b0</span><span class="wx-dl">${Math.round(d.daily.temperature_2m_min[i])}\u00b0</span><span class="wx-dp">${pop}%</span></div>`;
+    return`<div class="wx-slot"><span class="wx-t">${Math.round(d.daily.temperature_2m_max[i])}\u00b0</span><span class="wx-lo">${Math.round(d.daily.temperature_2m_min[i])}\u00b0</span><span class="wx-l">${nm}</span><span class="wx-p">${dyPop[i]??0}%</span></div>`;
   }).join('');
   const cur=Math.round(hTe[si]||hTe[0]);
   document.getElementById('wx-hr').textContent=`${cur}\u00b0F \u00b7 ${d.timezone_abbreviation||''}`;
   td.wx=`${cur}\u00b0F`;updateTicker();
-  el.innerHTML=`<div class="wx-2col"><div class="wx-col"><div class="wx-wave">${hrSvg}</div><div class="wx-hrs">${hrHTML}</div></div><div class="wx-col"><div class="wx-wave">${dySvg}</div><div class="wx-days">${dyHTML}</div></div></div><div class="wx-ft">${Math.abs(lat).toFixed(1)}\u00b0${lat>=0?'N':'S'} ${Math.abs(lon).toFixed(1)}\u00b0${lon>=0?'E':'W'}</div>`;
+  el.innerHTML=`<div class="wx-2col"><div class="wx-col"><div class="wx-col-hdr">HRS</div>${mkWxAscii(hrTemps,2)}<div class="wx-slots">${hrSlots}</div></div><div class="wx-col"><div class="wx-col-hdr">7D</div>${mkWxAscii(dyMax,2)}<div class="wx-slots">${dySlots}</div></div></div><div class="wx-ft">${Math.abs(lat).toFixed(1)}\u00b0${lat>=0?'N':'S'} ${Math.abs(lon).toFixed(1)}\u00b0${lon>=0?'E':'W'}</div>`;
 }
 
 async function gapi(url){const r=await fetch(url,{headers:{Authorization:`Bearer ${accessToken}`}});if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||r.statusText);}return r.json();}
