@@ -584,7 +584,10 @@ async function fetchWeather(lat, lon, el) {
 
 function renderWeather(d, lat, lon, el) {
   const now = new Date();
-  const nowHour = now.toISOString().slice(0, 13); // "2025-04-04T14"
+  // d.timezone is the IANA timezone inferred from coordinates by Open-Meteo (e.g. "America/New_York")
+  const tz = d.timezone;
+  // Compute current hour in the location's timezone — Open-Meteo times are local, not UTC
+  const nowHour = now.toLocaleString('sv-SE', {timeZone: tz}).slice(0, 13).replace(' ', 'T');
 
   // ── Hourly: next 7 hours ──
   const hTimes = d.hourly.time;
@@ -594,8 +597,9 @@ function renderWeather(d, lat, lon, el) {
   const hourSlice = Array.from({length: 7}, (_, i) => startIdx + i).filter(i => i < hTimes.length);
 
   const hourHTML = hourSlice.map((i, pos) => {
-    const t = new Date(hTimes[i]);
-    const label = pos === 0 ? 'now' : t.toLocaleTimeString('en', {hour:'numeric', hour12:true}).toLowerCase().replace(' ','');
+    // Parse label directly from the time string to avoid browser-timezone conversion
+    const h = parseInt(hTimes[i].slice(11, 13));
+    const label = pos === 0 ? 'now' : (h === 0 ? '12am' : h < 12 ? h + 'am' : h === 12 ? '12pm' : (h - 12) + 'pm');
     const pop = hPop[i] ?? 0;
     return `<div class="wx-hour${pos === 0 ? ' now' : ''}">
       <div class="wx-hour-time">${label}</div>
