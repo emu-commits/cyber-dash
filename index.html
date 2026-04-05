@@ -428,45 +428,29 @@ function mkAsciiBar(prices,up,rows,barW){
   return`<pre class="ac ${up?'up':'dn'}">${lines.join('\n')}</pre>`;
 }
 
-// GEMINI QUOTA
+// GEMINI MODELS
 async function loadGemini(){
   const el=document.getElementById('gem-body');if(!el)return;
   try{
-    // Use access_token query param (simple GET, no preflight) — Authorization header triggers CORS preflight
-    // which cloudquotas.googleapis.com rejects from browsers
-    const url=`https://cloudquotas.googleapis.com/v1/projects/${PROJ_NUM}/locations/global/quotaInfos?filter=service%3Dgenerativelanguage.googleapis.com&pageSize=50&access_token=${encodeURIComponent(accessToken)}`;
-    const r=await fetch(url);
-    if(!r.ok)throw new Error('quota '+r.status);
+    // generativelanguage.googleapis.com has proper browser CORS support
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=50',
+      {headers:{Authorization:`Bearer ${accessToken}`}});
+    if(!r.ok)throw new Error('glm '+r.status);
     const data=await r.json();
-    const qs=data.quotaInfos||[];
-    // Pick the most useful quotas
-    const pick=(kw)=>qs.find(q=>(q.quotaId||'').toLowerCase().includes(kw));
-    const rpm=pick('requests-per-minute');
-    const tpm=pick('tokens-per-minute');
-    const tpd=pick('tokens-per-day')||pick('tokens-per-project-per-day');
-    function qRow(label,q){
-      if(!q)return'';
-      const val=q.dimensionsInfos?.[0]?.details?.value||q.quotaValue||'?';
-      const barsW=Math.min(10,Math.round((parseInt(val)||0)/1000));
-      return`<div class="mk-row"><span class="mk-lbl" style="font-size:13px;width:36px">${label}</span><span class="mk-dashes">\u00b7\u00b7\u00b7</span><span style="font-size:14px;color:var(--hi)">${val}</span></div>`;
-    }
-    let h=`<div class="mk-row"><span class="mk-lbl">GEM</span><span class="mk-dashes">\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7</span><span style="font-size:13px;color:var(--dim)">QUOTA</span></div>`;
-    h+=qRow('RPM',rpm)+qRow('TPM',tpm)+qRow('TPD',tpd);
-    if(!rpm&&!tpm&&!tpd){
-      const top3=qs.slice(0,3);
-      if(top3.length){
-        h+=top3.map(q=>{
-          const id=(q.quotaId||'').replace(/-per-project.*/,'').replace(/-/g,' ').toUpperCase().slice(0,16);
-          const val=q.dimensionsInfos?.[0]?.details?.value||'?';
-          return`<div class="mk-row"><span style="font-size:12px;color:var(--dim);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(id)}</span><span style="font-size:13px;color:var(--hi);flex-shrink:0">${val}</span></div>`;
-        }).join('');
-      }else{h+=`<div class="mk-err">NO QUOTAS FOUND</div>`;}
-    }
+    // Filter to generative text models only (skip embeddings)
+    const models=(data.models||[]).filter(m=>{
+      const n=(m.name||'').toLowerCase();
+      return !n.includes('embed')&&!n.includes('aqa')&&m.supportedGenerationMethods?.includes('generateContent');
+    });
+    let h=`<div class="mk-row"><span class="mk-lbl">GEM</span><span class="mk-dashes">\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7</span><span style="font-size:13px;color:var(--dim)">${models.length} MDL</span></div>`;
+    models.slice(0,5).forEach(m=>{
+      const nm=(m.displayName||m.name.split('/').pop()).replace(/^gemini-/i,'').replace(/^Gemini /i,'');
+      const itk=m.inputTokenLimit?Math.round(m.inputTokenLimit/1000)+'k in':'';
+      h+=`<div class="mk-row" style="padding:0 8px 1px"><span style="font-size:13px;color:var(--fg);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(nm)}</span><span style="font-size:12px;color:var(--dim);flex-shrink:0">${itk}</span></div>`;
+    });
     el.innerHTML=h;
   }catch(e){
-    // 401/403 = re-auth needed for cloud-platform scope; network = CORS or connectivity
-    const hint=e.message.includes('401')||e.message.includes('403')?'RE-AUTH NEEDED':e.message.slice(0,24);
-    el.innerHTML=`<div class="mk-row"><span class="mk-lbl">GEM</span><span class="mk-dashes">\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7</span><span style="font-size:13px;color:var(--dim)">QUOTA</span></div><div class="mk-err">${esc(hint)}</div>`;
+    el.innerHTML=`<div class="mk-row"><span class="mk-lbl">GEM</span><span class="mk-dashes">\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7</span><span style="font-size:13px;color:var(--dim)">MODELS</span></div><div class="mk-err">${esc(e.message.slice(0,22))}</div>`;
   }
 }
 
