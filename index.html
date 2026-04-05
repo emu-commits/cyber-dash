@@ -422,7 +422,7 @@ function mkAsciiBar(prices,up,rows,barW){
   const n=prices.length;
   const mn=Math.min(...prices),mx=Math.max(...prices),rng=mx-mn||mx*0.005||1;
   const heights=prices.map(p=>Math.max(0,Math.round(((p-mn)/rng)*rows)));
-  const bCh='\u2588'.repeat(barW),eCh='\u00b7'.repeat(barW);
+  const bCh='\u2588'.repeat(barW),eCh='\u2591'.repeat(barW);
   const lines=[];
   for(let row=rows;row>=1;row--)lines.push(heights.map(h=>h>=row?bCh:eCh).join(''));
   return`<pre class="ac ${up?'up':'dn'}">${lines.join('\n')}</pre>`;
@@ -432,8 +432,10 @@ function mkAsciiBar(prices,up,rows,barW){
 async function loadGemini(){
   const el=document.getElementById('gem-body');if(!el)return;
   try{
-    const url=`https://cloudquotas.googleapis.com/v1/projects/${PROJ_NUM}/locations/global/quotaInfos?filter=service%3Dgenerativelanguage.googleapis.com&pageSize=50`;
-    const r=await fetch(url,{headers:{Authorization:`Bearer ${accessToken}`}});
+    // Use access_token query param (simple GET, no preflight) — Authorization header triggers CORS preflight
+    // which cloudquotas.googleapis.com rejects from browsers
+    const url=`https://cloudquotas.googleapis.com/v1/projects/${PROJ_NUM}/locations/global/quotaInfos?filter=service%3Dgenerativelanguage.googleapis.com&pageSize=50&access_token=${encodeURIComponent(accessToken)}`;
+    const r=await fetch(url);
     if(!r.ok)throw new Error('quota '+r.status);
     const data=await r.json();
     const qs=data.quotaInfos||[];
@@ -462,7 +464,9 @@ async function loadGemini(){
     }
     el.innerHTML=h;
   }catch(e){
-    el.innerHTML=`<div class="mk-row"><span class="mk-lbl">GEM</span><span class="mk-dashes">\u00b7\u00b7\u00b7</span></div><div class="mk-err">${esc(e.message)}</div>`;
+    // 401/403 = re-auth needed for cloud-platform scope; network = CORS or connectivity
+    const hint=e.message.includes('401')||e.message.includes('403')?'RE-AUTH NEEDED':e.message.slice(0,24);
+    el.innerHTML=`<div class="mk-row"><span class="mk-lbl">GEM</span><span class="mk-dashes">\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7</span><span style="font-size:13px;color:var(--dim)">QUOTA</span></div><div class="mk-err">${esc(hint)}</div>`;
   }
 }
 
@@ -491,7 +495,7 @@ function renderWx(d,lat,lon,el){
   function mkWxAscii(temps,barW){
     const n=temps.length,mn=Math.min(...temps),mx=Math.max(...temps),rng=mx-mn||2;
     const heights=temps.map(p=>Math.max(0,Math.round(((p-mn)/rng)*4)));
-    const bCh='\u2588'.repeat(barW),eCh='\u00b7'.repeat(barW);
+    const bCh='\u2588'.repeat(barW),eCh='\u2591'.repeat(barW);
     const lines=[];
     for(let row=4;row>=1;row--)lines.push(heights.map(h=>h>=row?bCh:eCh).join(''));
     return`<pre class="ac neu">${lines.join('\n')}</pre>`;
