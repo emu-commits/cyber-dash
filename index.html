@@ -482,24 +482,23 @@ async function loadTasks() {
 function loadAll() { loadMarkets(); loadWeather(); loadGmail(); loadCalendar(); loadTasks(); }
 
 // ─────────────────────────────────────────────
-// MARKETS
-// BTC   — CoinGecko public API (no key, confirmed CORS)
-// IVVon — GeckoTerminal DEX pool OHLCV (on-chain S&P 500 tracker)
-// IEFon — GeckoTerminal DEX pool OHLCV (on-chain 10-yr treasury tracker)
-// Pool addresses cached in localStorage after first search.
+// MARKETS — CoinGecko public API (no key, confirmed CORS)
+// All three are Ondo Finance tokenized ETFs listed on CoinGecko.
+// BTC   — bitcoin
+// IVVon — ishares-core-s-p-500-etf-ondo-tokenized-etf (tracks IVV ~$540)
+// IEFon — ishares-7-10-year-treasury-bond-etf-ondo-tokenized-etf (tracks IEF ~$95)
 // ─────────────────────────────────────────────
 const MARKET_ASSETS = [
-  { id: 'btc',   label: 'BTC', src: 'cg',  cgId: 'bitcoin', fmt: p => '$' + (p >= 1000 ? (p/1000).toFixed(1)+'k' : p.toFixed(0)) },
-  { id: 'ivvon', label: 'S&P', src: 'gt',  query: 'IVVon',  fmt: p => '$' + p.toFixed(2) },
-  { id: 'iefon', label: '10Y', src: 'gt',  query: 'IEFon',  fmt: p => '$' + p.toFixed(2) },
+  { label: 'BTC', cgId: 'bitcoin',                                               fmt: p => '$' + (p >= 1000 ? (p/1000).toFixed(1)+'k' : p.toFixed(0)) },
+  { label: 'S&P', cgId: 'ishares-core-s-p-500-etf-ondo-tokenized-etf',           fmt: p => '$' + p.toFixed(2) },
+  { label: '10Y', cgId: 'ishares-7-10-year-treasury-bond-etf-ondo-tokenized-etf',fmt: p => '$' + p.toFixed(2) },
 ];
 
 async function loadMarkets() {
   const el = document.getElementById('markets-body');
   el.innerHTML = '<div class="loading">loading…</div>';
   const results = await Promise.all(MARKET_ASSETS.map(a =>
-    (a.src === 'cg' ? fetchCoinGecko(a.cgId) : fetchGeckoTerminal(a.id, a.query))
-    .catch(e => ({ error: e.message }))
+    fetchCoinGecko(a.cgId).catch(e => ({ error: e.message }))
   ));
   el.innerHTML = MARKET_ASSETS.map((asset, i) => {
     const d = results[i];
@@ -530,39 +529,6 @@ async function fetchCoinGecko(coinId) {
   return { prices };
 }
 
-async function fetchGeckoTerminal(id, query) {
-  const cacheKey = `gt_pool_${id}`;
-  let poolRef = localStorage.getItem(cacheKey); // stored as "network/address"
-
-  if (!poolRef) {
-    const r = await fetch(`https://api.geckoterminal.com/api/v2/search/pools?query=${encodeURIComponent(query)}&page=1`);
-    if (!r.ok) throw new Error('search ' + r.status);
-    const d = await r.json();
-    const pool = d.data?.[0];
-    if (!pool) throw new Error(`${query} not found on any DEX`);
-    // pool.id format: "{network}_{0xaddress}" — extract by finding the 0x boundary
-    // handles multi-word networks like "arbitrum_one_0x..."
-    const match = pool.id.match(/^(.+?)_(0x[0-9a-fA-F]+)$/);
-    if (!match) throw new Error(`unexpected pool id: ${pool.id}`);
-    poolRef = `${match[1]}/${match[2]}`;
-    localStorage.setItem(cacheKey, poolRef);
-  }
-
-  const slashIdx = poolRef.indexOf('/');
-  const network = poolRef.slice(0, slashIdx);
-  const address = poolRef.slice(slashIdx + 1);
-  const r = await fetch(`https://api.geckoterminal.com/api/v2/networks/${network}/pools/${address}/ohlcv/day?limit=8&currency=usd`);
-  if (!r.ok) {
-    localStorage.removeItem(cacheKey);
-    throw new Error('ohlcv ' + r.status);
-  }
-  const d = await r.json();
-  const candles = d.data?.attributes?.ohlcv_list;
-  if (!candles?.length) throw new Error('no candle data');
-  const prices = candles.slice(-7).map(c => parseFloat(c[4]));
-  if (prices.length < 2) throw new Error('insufficient data');
-  return { prices };
-}
 
 function mkSparkline(prices, isUp) {
   const W = 100, H = 36, PAD = 2;
