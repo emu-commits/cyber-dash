@@ -6,16 +6,16 @@
   <title>cyber-dash</title>
   <style>
     :root {
-      --bg:   #1a0a02;  --fg:   #d4b07a;  --dim:  #5a3418;
-      --hi:   #f5e090;  --bdr:  #3a1c08;  --up:   #6ab830;
-      --dn:   #c84020;  --rain: #4880c0;  --scr:  #0f0601;
+      --bg:   #110204;  --fg:   #dfd0a8;  --dim:  #4a2418;
+      --hi:   #f0e090;  --bdr:  #2a1008;  --up:   #70c830;
+      --dn:   #c84020;  --rain: #4880c0;  --scr:  #090102;
       --font: 'Courier New','Courier',monospace;
     }
     @media (prefers-color-scheme: light) {
       :root {
-        --bg:  #dfd4b0;  --fg:  #1a0800;  --dim: #7a5020;
-        --hi:  #080200;  --bdr: #a88840;  --up:  #1a5408;
-        --dn:  #800c00;  --rain:#1c3c68;  --scr: #cfc0a0;
+        --bg:  #e8e0c8;  --fg:  #140200;  --dim: #7a5020;
+        --hi:  #060000;  --bdr: #c0a840;  --up:  #1a5408;
+        --dn:  #800c00;  --rain:#1c3c68;  --scr: #d8d0b8;
       }
     }
     *{box-sizing:border-box;margin:0;padding:0}
@@ -46,8 +46,8 @@
     #ptr.releasing{transition:height .25s ease}
 
     /* ── TICKER ──────────────────────────── */
-    #tkr{flex-shrink:0;height:22px;overflow:hidden;display:flex;align-items:center;background:var(--bg);border-bottom:1px solid var(--bdr)}
-    #tkr-t{display:inline-block;white-space:nowrap;font-size:9px;letter-spacing:2px;color:var(--fg);will-change:transform;animation:tscroll 36s linear infinite}
+    #tkr{flex-shrink:0;height:26px;overflow:hidden;display:flex;align-items:center;background:var(--bg);border-bottom:1px solid var(--bdr)}
+    #tkr-t{display:inline-block;white-space:nowrap;font-size:11px;letter-spacing:2px;color:var(--fg);will-change:transform;animation:tscroll 36s linear infinite}
     @keyframes tscroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
     /* ── DOT SEPARATOR ───────────────────── */
@@ -56,59 +56,63 @@
       background:repeating-linear-gradient(90deg,var(--dim) 0,var(--dim) 2px,transparent 2px,transparent 9px)}
 
     /* ── SECTION HEAD ────────────────────── */
-    .sh{flex-shrink:0;height:22px;display:flex;align-items:center;gap:6px;padding:0 10px;font-size:9px;letter-spacing:2px;color:var(--dim)}
-    .sh-lbl{color:var(--fg);letter-spacing:4px;font-size:10px;font-weight:normal}
+    .sh{flex-shrink:0;height:26px;display:flex;align-items:center;gap:6px;padding:0 10px;font-size:11px;letter-spacing:2px;color:var(--dim)}
+    .sh-lbl{color:var(--fg);letter-spacing:5px;font-size:13px;font-weight:normal}
     .sh-line{flex:1;height:1px;background:var(--bdr)}
-    .sh-r{font-size:8px;color:var(--dim);letter-spacing:1px}
-    .sh-btn{font-family:var(--font);font-size:8px;letter-spacing:1px;color:var(--dim);background:none;border:none;cursor:pointer;padding:0;margin-left:4px}
+    .sh-r{font-size:10px;color:var(--dim);letter-spacing:1px}
+    .sh-btn{font-family:var(--font);font-size:10px;letter-spacing:1px;color:var(--dim);background:none;border:none;cursor:pointer;padding:0;margin-left:4px}
     .sh-btn:active{color:var(--dn)}
 
     /* ── MARKETS ─────────────────────────── */
     #sec-mkt{flex-shrink:0}
-    .mk-row{display:flex;align-items:center;padding:0 10px;height:22px;gap:6px}
-    .mk-lbl{font-size:10px;letter-spacing:3px;color:var(--dim);width:30px;flex-shrink:0}
+    .mk-2col{display:flex}
+    .mk-col{flex:1;min-width:0;display:flex;flex-direction:column}
+    .mk-col+.mk-col{border-left:1px solid var(--bdr)}
+    .mk-row{display:flex;align-items:center;padding:0 8px;height:24px;gap:5px}
+    .mk-lbl{font-size:13px;letter-spacing:4px;color:var(--dim);width:34px;flex-shrink:0}
     .mk-slash{flex:1;height:1px;background:var(--bdr)}
-    .mk-price{font-size:15px;color:var(--hi);flex-shrink:0;letter-spacing:0}
-    .mk-pct{font-size:10px;width:56px;text-align:right;flex-shrink:0}
+    .mk-price{font-size:18px;color:var(--hi);flex-shrink:0;letter-spacing:0}
+    .mk-pct{font-size:12px;width:58px;text-align:right;flex-shrink:0}
     .mk-pct.up{color:var(--up)} .mk-pct.dn{color:var(--dn)}
-    .mk-err{font-size:9px;color:var(--dim);padding:0 10px 4px}
-    .mk-wave{flex-shrink:0;height:56px;padding:0 10px}
+    .mk-err{font-size:10px;color:var(--dim);padding:0 8px 4px}
+    .mk-wave{flex-shrink:0;height:68px;padding:0 8px}
     .mk-wave svg{width:100%;height:100%;display:block}
+    .mk-wave.sm{height:60px}
 
     /* ── WEATHER ─────────────────────────── */
     #sec-wx{flex-shrink:0}
-    .wx-wave{flex-shrink:0;height:34px;padding:0 10px}
+    .wx-wave{flex-shrink:0;height:44px;padding:0 10px}
     .wx-wave svg{width:100%;height:100%;display:block}
-    .wx-hrs{display:flex;padding:0 10px;height:24px;align-items:center}
+    .wx-hrs{display:flex;padding:0 10px;height:28px;align-items:center}
     .wx-h{flex:1;display:flex;flex-direction:column;align-items:center}
-    .wx-ht{font-size:9px;color:var(--hi);line-height:1.4}
-    .wx-hl{font-size:7px;color:var(--dim);line-height:1.3}
-    .wx-days{display:flex;padding:0 10px;height:28px;align-items:center}
+    .wx-ht{font-size:12px;color:var(--hi);line-height:1.4}
+    .wx-hl{font-size:9px;color:var(--dim);line-height:1.3}
+    .wx-days{display:flex;padding:0 10px;height:32px;align-items:center}
     .wx-d{flex:1;display:flex;flex-direction:column;align-items:center}
-    .wx-dn{font-size:7px;color:var(--dim);line-height:1.4}
-    .wx-dh{font-size:10px;color:var(--hi);line-height:1.2}
-    .wx-dl{font-size:8px;color:var(--dim);line-height:1.2}
-    .wx-ft{font-size:7px;color:var(--dim);text-align:right;padding:2px 10px 2px;letter-spacing:1px}
+    .wx-dn{font-size:9px;color:var(--dim);line-height:1.4}
+    .wx-dh{font-size:13px;color:var(--hi);line-height:1.2}
+    .wx-dl{font-size:10px;color:var(--dim);line-height:1.2}
+    .wx-ft{font-size:9px;color:var(--dim);text-align:right;padding:2px 10px 2px;letter-spacing:1px}
 
     /* ── DATA FEED ───────────────────────── */
     #sec-data{flex:1;min-height:0;display:flex;flex-direction:column}
     #feed-win{flex:1;min-height:0;overflow:hidden;position:relative}
     #feed-body{position:absolute;top:0;left:0;right:0;padding:0 0 8px;will-change:transform}
-    .f-lbl{font-size:8px;letter-spacing:2px;color:var(--dim);padding:3px 10px 2px;display:block}
-    .f-row{display:flex;align-items:baseline;padding:1px 10px;font-size:11px;line-height:1.8;gap:5px;color:var(--fg)}
+    .f-lbl{font-size:11px;letter-spacing:2px;color:var(--dim);padding:3px 10px 2px;display:block}
+    .f-row{display:flex;align-items:baseline;padding:2px 10px;font-size:13px;line-height:1.7;gap:6px;color:var(--fg)}
     .f-row.hi{color:var(--hi)}
-    .f-ic{color:var(--dim);flex-shrink:0;font-size:10px;width:12px}
+    .f-ic{color:var(--dim);flex-shrink:0;font-size:11px;width:14px}
     .f-mn{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-    .f-dt{font-size:8px;color:var(--dim);flex-shrink:0;letter-spacing:1px}
+    .f-dt{font-size:10px;color:var(--dim);flex-shrink:0;letter-spacing:1px}
     .f-gap{height:4px}
 
     /* ── PROGRESS BARS ───────────────────── */
     #prog-section{flex-shrink:0;padding:4px 0 2px}
-    .pb-row{display:flex;align-items:center;padding:2px 10px;gap:8px;height:19px}
-    .pb-lbl{font-size:8px;letter-spacing:2px;color:var(--dim);width:44px;flex-shrink:0}
-    .pb-track{flex:1;height:7px;background:var(--scr);position:relative;overflow:hidden}
+    .pb-row{display:flex;align-items:center;padding:2px 10px;gap:8px;height:22px}
+    .pb-lbl{font-size:11px;letter-spacing:2px;color:var(--dim);width:52px;flex-shrink:0}
+    .pb-track{flex:1;height:9px;background:var(--scr);position:relative;overflow:hidden}
     .pb-fill{height:100%;background:var(--fg);transition:width 1.2s ease}
-    .pb-val{font-size:9px;color:var(--fg);width:38px;text-align:right;flex-shrink:0;letter-spacing:0}
+    .pb-val{font-size:11px;color:var(--fg);width:44px;text-align:right;flex-shrink:0;letter-spacing:0}
 
     /* ── NAV ─────────────────────────────── */
     #nav{position:fixed;bottom:calc(env(safe-area-inset-bottom,6px)+4px);left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:100}
@@ -374,16 +378,16 @@ async function loadMarkets(){
   const el=document.getElementById('mkt-body');
   el.innerHTML='<div class="sys-msg">FETCHING\u00b7\u00b7\u00b7</div>';
   const res=await Promise.all(ASSETS.map(a=>fetchCG(a.cg).catch(e=>({error:e.message}))));
-  let html='';
-  ASSETS.forEach((a,i)=>{
-    const d=res[i];
-    if(d.error){html+=`<div class="mk-row"><span class="mk-lbl">${a.l}</span><span class="mk-slash"></span></div><div class="mk-err">${esc(d.error)}</div>`;return;}
+  // BTC + S&P as two columns, TLT full width
+  function mkCard(a,d,sm){
+    if(d.error)return`<div class="mk-row"><span class="mk-lbl">${a.l}</span><span class="mk-slash"></span></div><div class="mk-err">${esc(d.error)}</div>`;
     const {prices}=d,last=prices[prices.length-1],pct=(last-prices[0])/prices[0]*100,up=pct>=0;
     td[a.tk]=a.fmt(last)+' '+(up?'+':'')+pct.toFixed(1)+'%';
-    html+=`<div class="mk-row"><span class="mk-lbl">${a.l}</span><span class="mk-slash"></span><span class="mk-price">${a.fmt(last)}</span><span class="mk-pct ${up?'up':'dn'}">\u00a0${(up?'+':'')+pct.toFixed(2)+'%'}</span></div>`;
-    html+=`<div class="mk-wave">${mkWave(prices,up,56)}</div>`;
-    if(i<ASSETS.length-1)html+='<div class="sep"></div>';
-  });
+    return`<div class="mk-row"><span class="mk-lbl">${a.l}</span><span class="mk-slash"></span><span class="mk-price">${a.fmt(last)}</span><span class="mk-pct ${up?'up':'dn'}">\u00a0${(up?'+':'')+pct.toFixed(2)+'%'}</span></div>`
+      +`<div class="mk-wave${sm?' sm':''}">${mkBars(prices,up,sm?60:68)}</div>`;
+  }
+  let html=`<div class="mk-2col"><div class="mk-col">${mkCard(ASSETS[0],res[0],true)}</div><div class="mk-col">${mkCard(ASSETS[1],res[1],true)}</div></div>`;
+  html+=`<div class="sep"></div>${mkCard(ASSETS[2],res[2],false)}`;
   el.innerHTML=html;updateTicker();
 }
 async function fetchCG(id){
@@ -394,29 +398,37 @@ async function fetchCG(id){
   return{prices};
 }
 
-function mkWave(prices,up,H){
-  const W=300,PAD=3;
+function mkBars(prices,up,H){
+  const W=300,PAD=4;
   const isL=window.matchMedia('(prefers-color-scheme:light)').matches;
-  const stroke=up?(isL?'#1a5408':'#6ab830'):(isL?'#800c00':'#c84020');
-  const fillC =up?(isL?'rgba(26,84,8,0.1)' :'rgba(106,184,48,0.15)'):(isL?'rgba(128,12,0,0.1)':'rgba(200,64,32,0.15)');
-  const gridC =isL?'rgba(120,80,20,0.18)':'rgba(90,52,24,0.5)';
-  const dotC  =isL?'rgba(120,80,20,0.25)':'rgba(90,52,24,0.4)';
-  const bgC   =isL?'rgba(0,0,0,0.04)'    :'rgba(0,0,0,0.25)';
+  const upC  =isL?'#1a5408':'#70c830';
+  const dnC  =isL?'#800c00':'#c84020';
+  const dimC =isL?'rgba(80,50,0,0.25)':'rgba(200,160,80,0.2)';
+  const gridC=isL?'rgba(80,50,0,0.18)':'rgba(200,160,80,0.12)';
+  const bgC  =isL?'rgba(0,0,0,0.06)':'rgba(0,0,0,0.35)';
   const mn=Math.min(...prices),mx=Math.max(...prices),rng=mx-mn||mx*0.005||1,n=prices.length;
-  const pts=prices.map((p,i)=>{
-    const x=PAD+(i/(n-1))*(W-PAD*2);
-    const y=H-PAD-((p-mn)/rng)*(H-PAD*2);
-    return[x.toFixed(1),y.toFixed(1)];
-  });
-  const ptStr=pts.map(p=>p.join(',')).join(' ');
-  const area='M '+pts[0].join(',')+ ' '+pts.slice(1).map(p=>'L '+p.join(',')).join(' ')+` L ${pts[pts.length-1][0]},${H} L ${pts[0][0]},${H} Z`;
-  // horizontal grid lines inside the oscilloscope screen
-  const grids=[0.25,0.5,0.75].map(f=>`<line x1="0" y1="${(H*f).toFixed(1)}" x2="${W}" y2="${(H*f).toFixed(1)}" stroke="${gridC}" stroke-width="0.8"/>`).join('');
-  // dot grid inside the screen (oscilloscope)
-  const dotGrid=`<pattern id="dg${up?'u':'d'}" width="10" height="10" patternUnits="userSpaceOnUse"><rect x="4.5" y="4.5" width="1" height="1" fill="${dotC}"/></pattern><rect width="${W}" height="${H}" fill="url(#dg${up?'u':'d'})"/>`;
-  // pixel squares at data points
-  const sqrs=pts.map(p=>`<rect x="${(parseFloat(p[0])-2.5).toFixed(1)}" y="${(parseFloat(p[1])-2.5).toFixed(1)}" width="5" height="5" fill="${stroke}"/>`).join('');
-  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><pattern id="dg${up?'u':'d'}" width="10" height="10" patternUnits="userSpaceOnUse"><rect x="4.5" y="4.5" width="1" height="1" fill="${dotC}"/></pattern></defs><rect width="${W}" height="${H}" fill="${bgC}"/><rect width="${W}" height="${H}" fill="url(#dg${up?'u':'d'})"/>${grids}<path d="${area}" fill="${fillC}"/><polyline points="${ptStr}" fill="none" stroke="${stroke}" stroke-width="2.5"/>${sqrs}</svg>`;
+  const slot=(W-PAD*2)/n;
+  const barW=Math.max(3,Math.floor(slot*0.72));
+  // pixel-block bars: each bar drawn as stacked squares for chunky pixel look
+  const SQ=4; // square size
+  const bars=prices.map((p,i)=>{
+    const x=PAD+i*slot+(slot-barW)/2;
+    const yTop=H-PAD-((p-mn)/rng)*(H-PAD*2);
+    const barH=H-PAD-yTop;
+    const isBarUp=p>=prices[0];
+    const c=isBarUp?upC:dnC;
+    // draw bar as stacked pixel squares
+    const rects=[];
+    for(let y=H-PAD-SQ;y>=yTop;y-=SQ){
+      rects.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${SQ-1}" fill="${c}"/>`);
+    }
+    return rects.join('');
+  }).join('');
+  // horizontal grid lines
+  const grids=[0.33,0.66].map(f=>`<line x1="0" y1="${(H*f).toFixed(1)}" x2="${W}" y2="${(H*f).toFixed(1)}" stroke="${gridC}" stroke-width="1"/>`).join('');
+  // subtle dot grid behind bars
+  const dotGrid=`<pattern id="dg${up?'u':'d'}" width="8" height="8" patternUnits="userSpaceOnUse"><rect x="3.5" y="3.5" width="1" height="1" fill="${dimC}"/></pattern>`;
+  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs>${dotGrid}</defs><rect width="${W}" height="${H}" fill="${bgC}"/><rect width="${W}" height="${H}" fill="url(#dg${up?'u':'d'})"/>${grids}${bars}</svg>`;
 }
 
 // WEATHER
@@ -441,25 +453,30 @@ function renderWx(d,lat,lon,el){
   const si=Math.max(0,hT.findIndex(t=>t>=nowH));
   const hi=Array.from({length:7},(_,i)=>si+i).filter(i=>i<hT.length);
   const temps=hi.map(i=>hTe[i]);
-  const W=300,H=34,PAD=3;
+  const W=300,H=44,PAD=4;
   const mn=Math.min(...temps),mx=Math.max(...temps),rng=mx-mn||2,n=temps.length;
   const isL=window.matchMedia('(prefers-color-scheme:light)').matches;
-  const wC=isL?'rgba(26,8,0,0.75)':'rgba(212,176,120,0.85)';
-  const wF=isL?'rgba(26,8,0,0.07)':'rgba(212,176,120,0.1)';
-  const rC=isL?'#1c3c68':'#4880c0';
-  const gC=isL?'rgba(120,80,20,0.18)':'rgba(90,52,24,0.5)';
-  const dC=isL?'rgba(120,80,20,0.22)':'rgba(90,52,24,0.4)';
-  const bgC=isL?'rgba(0,0,0,0.04)':'rgba(0,0,0,0.25)';
-  const pts=temps.map((p,i)=>{
-    const x=PAD+(i/(n-1))*(W-PAD*2);
-    const y=H-PAD-((p-mn)/rng)*(H-PAD*2);
-    return[x.toFixed(1),y.toFixed(1)];
-  });
-  const ptStr=pts.map(p=>p.join(',')).join(' ');
-  const area='M '+pts[0].join(',')+' '+pts.slice(1).map(p=>'L '+p.join(',')).join(' ')+` L ${pts[pts.length-1][0]},${H} L ${pts[0][0]},${H} Z`;
-  const grid=`<line x1="0" y1="${(H*0.5).toFixed(1)}" x2="${W}" y2="${(H*0.5).toFixed(1)}" stroke="${gC}" stroke-width="0.8"/>`;
-  const sqrs=pts.map((p,i)=>{const pop=hP[hi[i]]??0;return`<rect x="${(parseFloat(p[0])-2).toFixed(1)}" y="${(parseFloat(p[1])-2).toFixed(1)}" width="4" height="4" fill="${pop>=40?rC:wC}"/>`;}).join('');
-  const wxSvg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><pattern id="wxdg" width="10" height="10" patternUnits="userSpaceOnUse"><rect x="4.5" y="4.5" width="1" height="1" fill="${dC}"/></pattern></defs><rect width="${W}" height="${H}" fill="${bgC}"/><rect width="${W}" height="${H}" fill="url(#wxdg)"/>${grid}<path d="${area}" fill="${wF}"/><polyline points="${ptStr}" fill="none" stroke="${wC}" stroke-width="2"/>${sqrs}</svg>`;
+  const wC =isL?'rgba(20,2,0,0.85)':'rgba(223,208,168,0.9)';
+  const rC =isL?'#1c3c68':'#4880c0';
+  const gC =isL?'rgba(80,50,0,0.18)':'rgba(200,160,80,0.12)';
+  const dC =isL?'rgba(80,50,0,0.22)':'rgba(200,160,80,0.18)';
+  const bgC=isL?'rgba(0,0,0,0.06)':'rgba(0,0,0,0.35)';
+  const SQ=4;
+  const slot=(W-PAD*2)/n;
+  const barW=Math.max(3,Math.floor(slot*0.72));
+  const wxBars=temps.map((p,i)=>{
+    const pop=hP[hi[i]]??0;
+    const c=pop>=40?rC:wC;
+    const yTop=H-PAD-((p-mn)/rng)*(H-PAD*2);
+    const x=PAD+i*slot+(slot-barW)/2;
+    const rects=[];
+    for(let y=H-PAD-SQ;y>=yTop;y-=SQ){
+      rects.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${SQ-1}" fill="${c}"/>`);
+    }
+    return rects.join('');
+  }).join('');
+  const grid=`<line x1="0" y1="${(H*0.5).toFixed(1)}" x2="${W}" y2="${(H*0.5).toFixed(1)}" stroke="${gC}" stroke-width="1"/>`;
+  const wxSvg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><pattern id="wxdg" width="8" height="8" patternUnits="userSpaceOnUse"><rect x="3.5" y="3.5" width="1" height="1" fill="${dC}"/></pattern></defs><rect width="${W}" height="${H}" fill="${bgC}"/><rect width="${W}" height="${H}" fill="url(#wxdg)"/>${grid}${wxBars}</svg>`;
   const DAYS=['SU','MO','TU','WE','TH','FR','SA'];
   const hrHTML=hi.map((idx,pos)=>{const h=parseInt(hT[idx].slice(11,13));const l=pos===0?'NOW':(h===0?'12A':h<12?h+'A':h===12?'12P':(h-12)+'P');return`<div class="wx-h"><span class="wx-ht">${Math.round(hTe[idx])}\u00b0</span><span class="wx-hl">${l}</span></div>`;}).join('');
   const dyHTML=d.daily.time.slice(0,7).map((t,i)=>{const nm=i===0?'TD':DAYS[new Date(t+'T12:00:00').getDay()];return`<div class="wx-d"><span class="wx-dn">${nm}</span><span class="wx-dh">${Math.round(d.daily.temperature_2m_max[i])}\u00b0</span><span class="wx-dl">${Math.round(d.daily.temperature_2m_min[i])}\u00b0</span></div>`;}).join('');
