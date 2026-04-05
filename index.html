@@ -490,14 +490,14 @@ function loadAll() { loadMarkets(); loadWeather(); loadGmail(); loadCalendar(); 
 const MARKET_ASSETS = [
   { label: 'BTC', cgId: 'bitcoin',                                     fmt: p => '$' + (p >= 1000 ? (p/1000).toFixed(1)+'k' : p.toFixed(0)) },
   { label: 'S&P', cgId: 'ishares-core-s-p-500-etf-ondo-tokenized-etf', fmt: p => '$' + p.toFixed(2) },
-  { label: '10Y', treasury: true,                                       fmt: p => p.toFixed(2) + '%' },
+  { label: '10Y', cgId: 'superstate-short-duration-us-government-securities-fund', fmt: p => '$' + p.toFixed(2) },
 ];
 
 async function loadMarkets() {
   const el = document.getElementById('markets-body');
   el.innerHTML = '<div class="loading">loading…</div>';
   const results = await Promise.all(MARKET_ASSETS.map(a =>
-    (a.treasury ? fetchTreasury10Y() : fetchCoinGecko(a.cgId)).catch(e => ({ error: e.message }))
+    fetchCoinGecko(a.cgId).catch(e => ({ error: e.message }))
   ));
   el.innerHTML = MARKET_ASSETS.map((asset, i) => {
     const d = results[i];
@@ -524,20 +524,6 @@ async function fetchCoinGecko(coinId) {
   if (!r.ok) throw new Error('CG ' + r.status);
   const d = await r.json();
   const prices = d.prices.map(p => p[1]).slice(-7);
-  if (prices.length < 2) throw new Error('insufficient data');
-  return { prices };
-}
-
-async function fetchTreasury10Y() {
-  // FRED CSV download — no key required, direct file download with CORS
-  const r = await fetch('https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10');
-  if (!r.ok) throw new Error('FRED ' + r.status);
-  const text = await r.text();
-  const prices = text.trim().split('\n')
-    .slice(1)                          // skip header row
-    .filter(l => !l.endsWith(',.'))    // skip days with missing data (marked as ".")
-    .slice(-7)
-    .map(l => parseFloat(l.split(',')[1]));
   if (prices.length < 2) throw new Error('insufficient data');
   return { prices };
 }
