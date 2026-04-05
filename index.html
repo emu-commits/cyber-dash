@@ -6,416 +6,420 @@
   <title>cyber-dash</title>
   <style>
     :root {
-      --bg:    #0e0800;  --fg:    #c0a050;  --dim:   #4a2808;
-      --hi:    #f0d060;  --bdr:   #241000;  --up:    #68b030;
-      --dn:    #c04818;  --rain:  #4878a8;
-      --font:  'Courier New','Courier',monospace;
+      --bg:   #1a0a02;  --fg:   #d4b07a;  --dim:  #5a3418;
+      --hi:   #f5e090;  --bdr:  #3a1c08;  --up:   #6ab830;
+      --dn:   #c84020;  --rain: #4880c0;  --scr:  #0f0601;
+      --font: 'Courier New','Courier',monospace;
     }
     @media (prefers-color-scheme: light) {
       :root {
-        --bg:  #e4d4a8;  --fg:  #160800;  --dim: #7a4c18;
-        --hi:  #080200;  --bdr: #a88438;  --up:  #185008;
-        --dn:  #780800;  --rain:#1a3858;
+        --bg:  #dfd4b0;  --fg:  #1a0800;  --dim: #7a5020;
+        --hi:  #080200;  --bdr: #a88840;  --up:  #1a5408;
+        --dn:  #800c00;  --rain:#1c3c68;  --scr: #cfc0a0;
       }
     }
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:var(--font);-webkit-text-size-adjust:100%}
 
-    /* dot grid */
-    body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-      background-image:radial-gradient(circle,var(--bdr) 1.2px,transparent 1.2px);
-      background-size:12px 12px}
-    /* scanlines */
-    body::after{content:'';position:fixed;inset:0;z-index:500;pointer-events:none;
-      background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 3px)}
-
-    /* ── AUTH ── */
+    /* ── AUTH ─────────────────────────────── */
     #auth-screen{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;height:100dvh;padding:24px}
-    .a-frame{width:100%;max-width:310px;border:1px solid var(--dim);padding:24px 20px}
-    .a-logo{text-align:center;font-size:14px;letter-spacing:5px;color:var(--hi);margin-bottom:2px}
-    .a-sub{text-align:center;font-size:8px;letter-spacing:3px;color:var(--dim);margin-bottom:20px}
-    .a-row{font-size:10px;line-height:2.3;color:var(--dim)}
+    .a-wrap{width:100%;max-width:320px}
+    .a-logo{font-size:15px;letter-spacing:6px;color:var(--hi);text-align:center;margin-bottom:2px}
+    .a-sub{font-size:8px;letter-spacing:3px;color:var(--dim);text-align:center;margin-bottom:6px}
+    .a-sep{height:1px;background:var(--bdr);margin-bottom:18px}
+    .a-row{font-size:11px;line-height:2.2;color:var(--dim)}
     .a-row b{color:var(--fg);font-weight:normal}
-    #btn-login{display:block;width:100%;padding:11px;font-family:var(--font);font-size:11px;letter-spacing:3px;color:var(--hi);background:transparent;border:1px solid var(--fg);cursor:pointer;margin-top:20px;text-transform:uppercase}
+    #btn-login{display:block;width:100%;padding:13px;margin-top:22px;font-family:var(--font);font-size:12px;letter-spacing:4px;color:var(--hi);background:transparent;border:1px solid var(--fg);cursor:pointer}
     #btn-login:active{background:var(--bdr)}
-    #auth-error{font-size:9px;color:var(--dn);text-align:center;margin-top:12px;min-height:14px}
+    #auth-error{font-size:9px;color:var(--dn);text-align:center;margin-top:14px;min-height:16px}
     @keyframes blink{50%{opacity:0}} .blink{animation:blink 1s step-end infinite}
 
-    /* ── APP ── */
+    /* ── APP ─────────────────────────────── */
     #app{display:none;position:relative;z-index:10;height:100dvh;overflow:hidden}
     #panels{display:flex;width:200%;height:100%;transition:transform 0.3s cubic-bezier(.4,0,.2,1)}
     .panel{width:50%;height:100%;display:flex;flex-direction:column;overflow:hidden;
       padding-top:env(safe-area-inset-top,44px);
-      padding-bottom:calc(env(safe-area-inset-bottom,12px) + 22px)}
+      padding-bottom:calc(env(safe-area-inset-bottom,10px) + 20px)}
 
-    /* ── PTR ── */
+    /* ── PTR ─────────────────────────────── */
     #ptr{flex-shrink:0;height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:8px;letter-spacing:3px;color:var(--dim)}
     #ptr.releasing{transition:height .25s ease}
 
-    /* ── TICKER ── */
-    #tkr-wrap{flex-shrink:0;height:22px;overflow:hidden;border-bottom:1px solid var(--bdr);display:flex;align-items:center}
-    #tkr-track{display:inline-block;white-space:nowrap;font-size:9px;letter-spacing:2px;color:var(--fg);will-change:transform;animation:tkr 38s linear infinite}
-    @keyframes tkr{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+    /* ── TICKER ──────────────────────────── */
+    #tkr{flex-shrink:0;height:22px;overflow:hidden;display:flex;align-items:center;background:var(--bg);border-bottom:1px solid var(--bdr)}
+    #tkr-t{display:inline-block;white-space:nowrap;font-size:9px;letter-spacing:2px;color:var(--fg);will-change:transform;animation:tscroll 36s linear infinite}
+    @keyframes tscroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
-    /* ── SECTION CHROME ── */
-    .sec{flex-shrink:0;border-bottom:1px solid var(--bdr)}
-    #sec-data{flex:1;min-height:0;display:flex;flex-direction:column;border-bottom:none}
-    .sh{height:22px;display:flex;align-items:center;gap:5px;padding:0 10px;font-size:9px;letter-spacing:2px;color:var(--dim)}
-    .sh-l{color:var(--fg);letter-spacing:4px;font-size:9px}
-    .sh-hr{flex:1;height:1px;background:var(--bdr)}
+    /* ── DOT SEPARATOR ───────────────────── */
+    .sep{flex-shrink:0;height:11px;overflow:hidden;display:flex;align-items:center;padding:0 10px}
+    .sep::after{content:'';display:block;flex:1;height:1px;
+      background:repeating-linear-gradient(90deg,var(--dim) 0,var(--dim) 2px,transparent 2px,transparent 9px)}
+
+    /* ── SECTION HEAD ────────────────────── */
+    .sh{flex-shrink:0;height:22px;display:flex;align-items:center;gap:6px;padding:0 10px;font-size:9px;letter-spacing:2px;color:var(--dim)}
+    .sh-lbl{color:var(--fg);letter-spacing:4px;font-size:10px;font-weight:normal}
+    .sh-line{flex:1;height:1px;background:var(--bdr)}
     .sh-r{font-size:8px;color:var(--dim);letter-spacing:1px}
     .sh-btn{font-family:var(--font);font-size:8px;letter-spacing:1px;color:var(--dim);background:none;border:none;cursor:pointer;padding:0;margin-left:4px}
     .sh-btn:active{color:var(--dn)}
 
-    /* ── MARKETS ── */
-    .mkt-head{display:flex;align-items:center;padding:0 10px;height:22px;gap:6px}
-    .mkt-lbl{font-size:9px;letter-spacing:2px;color:var(--dim);width:28px;flex-shrink:0}
-    .mkt-slashline{flex:1;height:1px;background:var(--bdr)}
-    .mkt-price{font-size:14px;color:var(--hi);letter-spacing:0;flex-shrink:0}
-    .mkt-pct{font-size:10px;width:52px;text-align:right;flex-shrink:0;letter-spacing:0}
-    .mkt-pct.up{color:var(--up)} .mkt-pct.dn{color:var(--dn)}
-    .mkt-wave{padding:0 10px 3px;height:36px}
-    .mkt-wave svg{width:100%;height:100%;display:block}
-    .mkt-err{font-size:9px;color:var(--dim);padding:0 10px 4px}
+    /* ── MARKETS ─────────────────────────── */
+    #sec-mkt{flex-shrink:0}
+    .mk-row{display:flex;align-items:center;padding:0 10px;height:22px;gap:6px}
+    .mk-lbl{font-size:10px;letter-spacing:3px;color:var(--dim);width:30px;flex-shrink:0}
+    .mk-slash{flex:1;height:1px;background:var(--bdr)}
+    .mk-price{font-size:15px;color:var(--hi);flex-shrink:0;letter-spacing:0}
+    .mk-pct{font-size:10px;width:56px;text-align:right;flex-shrink:0}
+    .mk-pct.up{color:var(--up)} .mk-pct.dn{color:var(--dn)}
+    .mk-err{font-size:9px;color:var(--dim);padding:0 10px 4px}
+    .mk-wave{flex-shrink:0;height:56px;padding:0 10px}
+    .mk-wave svg{width:100%;height:100%;display:block}
 
-    /* ── WEATHER ── */
-    .wx-curve{padding:0 10px;height:32px}
-    .wx-curve svg{width:100%;height:100%;display:block}
-    .wx-hrs{display:flex;padding:0 10px;height:26px;align-items:flex-start;padding-top:2px}
+    /* ── WEATHER ─────────────────────────── */
+    #sec-wx{flex-shrink:0}
+    .wx-wave{flex-shrink:0;height:34px;padding:0 10px}
+    .wx-wave svg{width:100%;height:100%;display:block}
+    .wx-hrs{display:flex;padding:0 10px;height:24px;align-items:center}
     .wx-h{flex:1;display:flex;flex-direction:column;align-items:center}
-    .wx-h-t{font-size:9px;color:var(--hi);line-height:1.4}
-    .wx-h-l{font-size:7px;color:var(--dim);letter-spacing:0;line-height:1.3}
-    .wx-days{display:flex;padding:0 10px;height:30px;align-items:center}
+    .wx-ht{font-size:9px;color:var(--hi);line-height:1.4}
+    .wx-hl{font-size:7px;color:var(--dim);line-height:1.3}
+    .wx-days{display:flex;padding:0 10px;height:28px;align-items:center}
     .wx-d{flex:1;display:flex;flex-direction:column;align-items:center}
-    .wx-d-n{font-size:7px;color:var(--dim);line-height:1.4}
-    .wx-d-h{font-size:10px;color:var(--hi);line-height:1.2}
-    .wx-d-l{font-size:8px;color:var(--dim);line-height:1.2}
-    .wx-foot{font-size:7px;color:var(--dim);text-align:right;padding:0 10px 3px;letter-spacing:1px}
+    .wx-dn{font-size:7px;color:var(--dim);line-height:1.4}
+    .wx-dh{font-size:10px;color:var(--hi);line-height:1.2}
+    .wx-dl{font-size:8px;color:var(--dim);line-height:1.2}
+    .wx-ft{font-size:7px;color:var(--dim);text-align:right;padding:2px 10px 2px;letter-spacing:1px}
 
-    /* ── DATA FEED ── */
+    /* ── DATA FEED ───────────────────────── */
+    #sec-data{flex:1;min-height:0;display:flex;flex-direction:column}
     #feed-win{flex:1;min-height:0;overflow:hidden;position:relative}
-    #feed-body{position:absolute;top:0;left:0;right:0;padding:1px 0 20px;will-change:transform}
-    .f-lbl{font-size:8px;letter-spacing:2px;color:var(--dim);border-bottom:1px solid var(--bdr);padding:0 10px 2px;margin-bottom:1px}
-    .f-row{display:flex;align-items:baseline;padding:1px 10px;font-size:11px;line-height:1.75;gap:5px;color:var(--fg)}
+    #feed-body{position:absolute;top:0;left:0;right:0;padding:0 0 8px;will-change:transform}
+    .f-lbl{font-size:8px;letter-spacing:2px;color:var(--dim);padding:3px 10px 2px;display:block}
+    .f-row{display:flex;align-items:baseline;padding:1px 10px;font-size:11px;line-height:1.8;gap:5px;color:var(--fg)}
     .f-row.hi{color:var(--hi)}
-    .f-i{color:var(--dim);flex-shrink:0;font-size:10px;width:12px}
-    .f-m{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-    .f-s{font-size:8px;color:var(--dim);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding-left:17px;line-height:1.4}
-    .f-d{font-size:8px;color:var(--dim);flex-shrink:0;letter-spacing:1px}
-    .f-gap{height:5px}
-    /* decorative sys grid fills empty space */
-    .sys-grid{font-size:8px;line-height:1.6;color:var(--bdr);letter-spacing:2px;padding:8px 10px 4px;white-space:pre;pointer-events:none;user-select:none}
-    @media (prefers-color-scheme:light){.sys-grid{color:var(--bdr);opacity:0.6}}
+    .f-ic{color:var(--dim);flex-shrink:0;font-size:10px;width:12px}
+    .f-mn{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    .f-dt{font-size:8px;color:var(--dim);flex-shrink:0;letter-spacing:1px}
+    .f-gap{height:4px}
 
-    /* ── NAV ── */
-    #nav{position:fixed;bottom:calc(env(safe-area-inset-bottom,6px) + 4px);left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:100}
+    /* ── PROGRESS BARS ───────────────────── */
+    #prog-section{flex-shrink:0;padding:4px 0 2px}
+    .pb-row{display:flex;align-items:center;padding:2px 10px;gap:8px;height:19px}
+    .pb-lbl{font-size:8px;letter-spacing:2px;color:var(--dim);width:44px;flex-shrink:0}
+    .pb-track{flex:1;height:7px;background:var(--scr);position:relative;overflow:hidden}
+    .pb-fill{height:100%;background:var(--fg);transition:width 1.2s ease}
+    .pb-val{font-size:9px;color:var(--fg);width:38px;text-align:right;flex-shrink:0;letter-spacing:0}
+
+    /* ── NAV ─────────────────────────────── */
+    #nav{position:fixed;bottom:calc(env(safe-area-inset-bottom,6px)+4px);left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:100}
     .dot{width:5px;height:5px;border-radius:50%;background:var(--dim);display:block;text-decoration:none;cursor:pointer;transition:background .2s}
     .dot.active{background:var(--fg)}
 
-    /* ── GEMINI ── */
-    #panel-gemini{align-items:center;justify-content:center;text-align:center;gap:16px}
-    .g-art{font-size:9px;color:var(--dim);letter-spacing:3px;line-height:1.7;white-space:pre}
-    .g-sig{font-size:44px;color:var(--fg);line-height:1}
+    /* ── GEMINI ──────────────────────────── */
+    #panel-gemini{align-items:center;justify-content:center;text-align:center;gap:20px}
+    .g-grid{font-size:9px;color:var(--dim);letter-spacing:3px;line-height:1.7;white-space:pre}
+    .g-sig{font-size:46px;color:var(--fg);line-height:1}
     .g-lbl{font-size:9px;letter-spacing:5px;color:var(--dim)}
-    #btn-gemini{padding:13px 34px;font-family:var(--font);font-size:11px;letter-spacing:3px;color:var(--hi);background:transparent;border:1px solid var(--fg);text-decoration:none;cursor:pointer;display:inline-block}
-    #btn-gemini:active{background:var(--bdr)}
+    #btn-gem{padding:14px 36px;font-family:var(--font);font-size:12px;letter-spacing:4px;color:var(--hi);background:transparent;border:1px solid var(--fg);text-decoration:none;cursor:pointer;display:inline-block}
+    #btn-gem:active{background:var(--bdr)}
     .g-note{font-size:8px;color:var(--dim);max-width:220px;line-height:2;letter-spacing:1px}
-    .sys-msg{padding:2px 10px;font-size:9px;color:var(--dim);letter-spacing:2px;line-height:2.2}
+    .sys-msg{padding:3px 10px;font-size:9px;color:var(--dim);letter-spacing:2px;line-height:2.2}
   </style>
 </head>
 <body>
 
-<!-- AUTH -->
+<!-- ── AUTH ── -->
 <div id="auth-screen">
-  <div class="a-frame">
+  <div class="a-wrap">
     <div class="a-logo">&#9672; CYBER&#8209;DASH &#9672;</div>
-    <div class="a-sub">SYS&#183;ACCESS&#183;TERMINAL</div>
+    <div class="a-sub">SYS / ACCESS TERMINAL</div>
+    <div class="a-sep"></div>
     <div class="a-row">&#9658; PROTOCOL&#58;&#160;<b>OAUTH 2.0 READ-ONLY</b></div>
     <div class="a-row">&#9658; CHANNELS&#58;&#160;<b>GMAIL &#183; CAL &#183; TASKS</b></div>
     <div class="a-row">&#9658; INTEL&#58;&#160;<b>MARKETS &#183; WEATHER</b></div>
-    <div class="a-row">&#9658; STATUS&#58;&#160;<b>AWAIT AUTH<span class="blink">_</span></b></div>
+    <div class="a-row">&#9658; STATUS&#58;&#160;<b>AWAITING AUTH<span class="blink">&#9646;</span></b></div>
     <button id="btn-login" onclick="startLogin()">[ AUTHENTICATE ]</button>
     <div id="auth-error"></div>
   </div>
 </div>
 
-<!-- APP -->
+<!-- ── APP ── -->
 <div id="app">
  <div id="panels">
 
-  <!-- PANEL 0: DASHBOARD -->
+  <!-- DASHBOARD -->
   <div class="panel" id="panel-dash">
     <div id="ptr"><span id="ptr-label">&#8595; SYNC</span></div>
 
-    <div id="tkr-wrap">
-      <div id="tkr-track"><span id="ta">&#9672; CYBER&#8209;DASH &#183; LOADING &#183; </span><span id="tb">&#9672; CYBER&#8209;DASH &#183; LOADING &#183; </span></div>
-    </div>
+    <div id="tkr"><div id="tkr-t"><span id="ta">&#9672; CYBER&#8209;DASH &#183; &#8212; &#183; </span><span id="tb">&#9672; CYBER&#8209;DASH &#183; &#8212; &#183; </span></div></div>
 
-    <div class="sec" id="sec-mkt">
-      <div class="sh"><span class="sh-l">MKT</span><span class="sh-hr"></span><span class="sh-r">7D&#183;SPOT</span></div>
+    <div id="sec-mkt">
+      <div class="sh"><span class="sh-lbl">MKT</span><span class="sh-line"></span><span class="sh-r">7D&#183;SPOT</span></div>
       <div id="mkt-body"><div class="sys-msg">FETCHING&#183;&#183;&#183;</div></div>
     </div>
 
-    <div class="sec" id="sec-wx">
-      <div class="sh"><span class="sh-l">WX</span><span class="sh-hr"></span><span class="sh-r" id="wx-hr">LOCATING&#183;&#183;&#183;</span></div>
-      <div id="wx-body"><div class="sys-msg">ACQUIRING POSITION&#183;&#183;&#183;</div></div>
+    <div class="sep"></div>
+
+    <div id="sec-wx">
+      <div class="sh"><span class="sh-lbl">WX</span><span class="sh-line"></span><span class="sh-r" id="wx-hr">LOCATING&#183;&#183;&#183;</span></div>
+      <div id="wx-body"><div class="sys-msg">ACQUIRING&#183;&#183;&#183;</div></div>
     </div>
 
-    <div class="sec" id="sec-data">
+    <div class="sep"></div>
+
+    <div id="sec-data">
       <div class="sh">
-        <span class="sh-l">SYS</span><span class="sh-hr"></span>
-        <span class="sh-r" id="d-email"></span>
+        <span class="sh-lbl">SYS</span><span class="sh-line"></span>
+        <span class="sh-r" id="d-em"></span>
         <button class="sh-btn" onclick="signOut()">[ EXIT ]</button>
       </div>
       <div id="feed-win"><div id="feed-body"><div class="sys-msg">LOADING&#183;&#183;&#183;</div></div></div>
+      <div id="prog-section">
+        <div class="sep" style="margin-bottom:3px"></div>
+        <div class="pb-row"><span class="pb-lbl">MAIL</span><div class="pb-track"><div class="pb-fill" id="pb0" style="width:0%"></div></div><span class="pb-val" id="pv0">&#8212;</span></div>
+        <div class="pb-row"><span class="pb-lbl">CAL</span><div class="pb-track"><div class="pb-fill" id="pb1" style="width:0%"></div></div><span class="pb-val" id="pv1">&#8212;</span></div>
+        <div class="pb-row"><span class="pb-lbl">TASKS</span><div class="pb-track"><div class="pb-fill" id="pb2" style="width:0%"></div></div><span class="pb-val" id="pv2">&#8212;</span></div>
+        <div class="pb-row"><span class="pb-lbl">UPTIME</span><div class="pb-track"><div class="pb-fill" id="pb3" style="width:0%"></div></div><span class="pb-val" id="pv3">&#8212;</span></div>
+      </div>
     </div>
   </div>
 
-  <!-- PANEL 1: GEMINI -->
+  <!-- GEMINI -->
   <div class="panel" id="panel-gemini">
-    <div class="g-art">&#9632;&#183;&#183;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#183;&#183;&#9632;
+    <div class="g-grid">&#9632;&#183;&#183;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#183;&#183;&#9632;
 &#183;&#183;&#9632;&#183;&#183;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#183;&#183;&#9632;&#183;&#183;
-&#9632;&#183;&#183;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#183;&#183;&#9632;</div>
+&#183;&#9632;&#183;&#183;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;</div>
     <div class="g-sig">&#10022;</div>
     <div class="g-lbl">// GEMINI //</div>
-    <a id="btn-gemini" href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer">[ OPEN GEMINI ]</a>
-    <div class="g-note">LAUNCHES GEMINI WITH WORKSPACE ACCESS &#183; EMAIL &#183; CALENDAR &#183; TASKS</div>
+    <a id="btn-gem" href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer">[ OPEN GEMINI ]</a>
+    <div class="g-note">WORKSPACE ACCESS &#183; EMAIL &#183; CALENDAR &#183; TASKS</div>
   </div>
 
- </div><!-- /panels -->
+ </div>
  <div id="nav">
    <div class="dot active" onclick="goToPanel(0)"></div>
    <a class="dot" href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer"></a>
  </div>
 </div>
-
 <script>
 const CLIENT_ID='643098083415-aldnf1l4k3m7r19airb07s42bolg9e16.apps.googleusercontent.com';
 const SCOPES=['https://www.googleapis.com/auth/gmail.readonly','https://www.googleapis.com/auth/calendar.readonly','https://www.googleapis.com/auth/tasks.readonly','openid','email','profile'].join(' ');
 let accessToken=null,tokenClient=null,currentPanel=0;
+const T0=Date.now();
 
 function initGIS(){
   tokenClient=google.accounts.oauth2.initTokenClient({
     client_id:CLIENT_ID,scope:SCOPES,
-    callback:(r)=>{
-      if(r.error){if(r.error!=='popup_closed_by_user')showErr(r.error);return;}
+    callback:(r)=>{if(r.error){if(r.error!=='popup_closed_by_user')showErr(r.error);return;}
       accessToken=r.access_token;
-      setTimeout(()=>tokenClient.requestAccessToken({prompt:'',login_hint:localStorage.getItem('cdhint')||''}),55*60*1000);
-      onSignedIn();
-    },
+      setTimeout(()=>tokenClient.requestAccessToken({prompt:'',login_hint:localStorage.getItem('cdh')||''}),55*60*1000);
+      onIn();},
     error_callback:(e)=>{if((e.type||'')==='popup_failed_to_open')return;showErr(e.type||JSON.stringify(e));}
   });
 }
-function startLogin(){if(!tokenClient){showErr('NOT READY');return;}showErr('');tokenClient.requestAccessToken({prompt:'',login_hint:localStorage.getItem('cdhint')||''});}
+function startLogin(){if(!tokenClient){showErr('NOT READY');return;}showErr('');tokenClient.requestAccessToken({prompt:'',login_hint:localStorage.getItem('cdh')||''});}
 function showErr(m){document.getElementById('auth-error').textContent=m;}
-async function onSignedIn(){
+async function onIn(){
   const info=await gapi('https://www.googleapis.com/oauth2/v3/userinfo');
   const em=info.email||'';
-  document.getElementById('d-email').textContent=em;
-  localStorage.setItem('cdhint',em);
+  document.getElementById('d-em').textContent=em;
+  localStorage.setItem('cdh',em);
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='block';
   updateTicker();loadAll();
 }
 function signOut(){
-  google.accounts.oauth2.revoke(accessToken,()=>{});
-  accessToken=null;localStorage.removeItem('cdhint');
+  google.accounts.oauth2.revoke(accessToken,()=>{});accessToken=null;localStorage.removeItem('cdh');
   document.getElementById('app').style.display='none';
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('auth-error').textContent='';
 }
 
-// ── SWIPE ──
+// SWIPE
 let tx=0,ty=0,sw=false;
 document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;sw=false;},{passive:true});
 document.addEventListener('touchmove',e=>{const dx=e.touches[0].clientX-tx,dy=e.touches[0].clientY-ty;if(!sw&&Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>10)sw=true;},{passive:true});
-document.addEventListener('touchend',e=>{
-  if(!sw)return;const dx=e.changedTouches[0].clientX-tx;
-  if(Math.abs(dx)>50){if(dx<0&&currentPanel===0)window.location.href='https://gemini.google.com/app';else if(dx>0&&currentPanel===1)goToPanel(0);}
-});
+document.addEventListener('touchend',e=>{if(!sw)return;const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50){if(dx<0&&currentPanel===0)window.location.href='https://gemini.google.com/app';else if(dx>0&&currentPanel===1)goToPanel(0);}});
 function goToPanel(i){currentPanel=i;document.getElementById('panels').style.transform=`translateX(-${i*50}%)`;document.querySelectorAll('.dot').forEach((d,j)=>d.classList.toggle('active',j===i));}
 
-// ── PTR ──
+// PTR
 const dp=document.getElementById('panel-dash'),pE=document.getElementById('ptr'),pL=document.getElementById('ptr-label');
 const PTR=60;let ps='idle',px=0,py=0,pd=0;
 dp.addEventListener('touchstart',e=>{if(dp.scrollTop<=0){px=e.touches[0].clientX;py=e.touches[0].clientY;ps='watching';pd=0;}},{passive:true});
-dp.addEventListener('touchmove',e=>{
-  if(ps==='idle')return;const dy=e.touches[0].clientY-py,dx=Math.abs(e.touches[0].clientX-px);
-  if(ps==='watching'){if(dx>10){ps='idle';return;}if(dy>8)ps='pulling';else return;}
-  pd=Math.max(0,Math.min(dy*0.45,PTR*1.2));pE.style.height=pd+'px';
-  pL.textContent=pd>=PTR?'RELEASE TO SYNC':'PULL TO SYNC';
-},{passive:true});
-dp.addEventListener('touchend',()=>{
-  if(ps!=='pulling'){ps='idle';return;}ps='idle';pE.classList.add('releasing');
-  if(pd>=PTR){pE.style.height='28px';pL.textContent='SYNCING...';loadAll();setTimeout(()=>{pE.style.height='0';setTimeout(()=>pE.classList.remove('releasing'),300);},1500);}
-  else{pE.style.height='0';setTimeout(()=>pE.classList.remove('releasing'),300);}
-  pd=0;
-});
+dp.addEventListener('touchmove',e=>{if(ps==='idle')return;const dy=e.touches[0].clientY-py,dx=Math.abs(e.touches[0].clientX-px);if(ps==='watching'){if(dx>10){ps='idle';return;}if(dy>8)ps='pulling';else return;}pd=Math.max(0,Math.min(dy*0.45,PTR*1.2));pE.style.height=pd+'px';pL.textContent=pd>=PTR?'RELEASE TO SYNC':'PULL TO SYNC';},{passive:true});
+dp.addEventListener('touchend',()=>{if(ps!=='pulling'){ps='idle';return;}ps='idle';pE.classList.add('releasing');if(pd>=PTR){pE.style.height='28px';pL.textContent='SYNCING...';loadAll();setTimeout(()=>{pE.style.height='0';setTimeout(()=>pE.classList.remove('releasing'),300);},1500);}else{pE.style.height='0';setTimeout(()=>pE.classList.remove('releasing'),300);}pd=0;});
 
-// ── FEED ──
+// FEED
 const fd={mail:null,cal:null,tasks:null};let ft=null;
 function updFeed(){
   const el=document.getElementById('feed-body');if(!el)return;
   let h=(fd.mail||'')+(fd.cal||'')+(fd.tasks||'');
   if(!h)h='<div class="sys-msg">LOADING...</div>';
-  // always append a decorative sys-grid to fill empty space
-  h+=mkSysGrid();
   el.style.transition='none';el.style.transform='translateY(0)';
   el.innerHTML=h;clearTimeout(ft);ft=setTimeout(startScroll,1000);
 }
 function startScroll(){
   const c=document.getElementById('feed-body'),w=document.getElementById('feed-win');
-  if(!c||!w)return;
-  const dist=c.scrollHeight-w.clientHeight;if(dist<40)return;
-  const secs=dist/20;
-  c.style.transition=`transform ${secs}s linear`;c.style.transform=`translateY(-${dist}px)`;
-  ft=setTimeout(()=>{c.style.transition='none';c.style.transform='translateY(0)';ft=setTimeout(startScroll,2500);},secs*1000+3500);
-}
-function mkSysGrid(){
-  const chars='0123456789ABCDEF';
-  const cols=28,rows=8;
-  let g='<div class="f-gap"></div><div class="sys-grid">';
-  for(let r=0;r<rows;r++){
-    for(let c=0;c<cols;c++)g+=chars[Math.floor(Math.random()*chars.length)];
-    if(r<rows-1)g+='\n';
-  }
-  return g+'</div>';
+  if(!c||!w)return;const dist=c.scrollHeight-w.clientHeight;if(dist<40)return;
+  const secs=dist/18;c.style.transition=`transform ${secs}s linear`;c.style.transform=`translateY(-${dist}px)`;
+  ft=setTimeout(()=>{c.style.transition='none';c.style.transform='translateY(0)';ft=setTimeout(startScroll,3000);},secs*1000+4000);
 }
 
-// ── TICKER ──
+// TICKER
 const td={};
 function updateTicker(){
   const n=new Date(),h=String(n.getHours()).padStart(2,'0'),m=String(n.getMinutes()).padStart(2,'0');
-  const p=[`\u25c8\u00a0${h}:${m}`];
-  if(td.btc)p.push(`BTC\u00a0${td.btc}`);
-  if(td.sp)p.push(`S\u0026P\u00a0${td.sp}`);
-  if(td.tlt)p.push(`TLT\u00a0${td.tlt}`);
-  if(td.wx)p.push(`WX\u00a0${td.wx}`);
+  const p=[`\u25c8 ${h}:${m}`];
+  if(td.btc)p.push(`BTC ${td.btc}`);if(td.sp)p.push(`S\u0026P ${td.sp}`);if(td.tlt)p.push(`TLT ${td.tlt}`);if(td.wx)p.push(`WX ${td.wx}`);
   const s=p.join(' \u00b7 ')+' \u00b7 ';
   ['ta','tb'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=s;});
-  const dur=Math.max(20,s.length*0.4);
-  const tr=document.getElementById('tkr-track');if(tr)tr.style.animationDuration=dur+'s';
+  const t=document.getElementById('tkr-t');if(t)t.style.animationDuration=Math.max(20,s.length*0.38)+'s';
 }
 setInterval(updateTicker,60000);
 
+// PROGRESS BARS
+const pbStats={mail:0,cal:0,tasks:0};
+function setPB(i,pct,label){
+  const f=document.getElementById('pb'+i),v=document.getElementById('pv'+i);
+  if(f)f.style.width=Math.min(100,pct)+'%';
+  if(v)v.textContent=label;
+}
+function updatePBs(){
+  setPB(0,pbStats.mail,pbStats.mail+'%');
+  setPB(1,pbStats.cal,pbStats.cal+'%');
+  setPB(2,pbStats.tasks,pbStats.tasks+'%');
+  const uptimePct=Math.min(99,Math.round((Date.now()-T0)/864000));
+  setPB(3,uptimePct,Math.round((Date.now()-T0)/1000)+'s');
+}
+
 function loadAll(){
-  fd.mail='<div class="sys-msg">MAIL\u00b7\u00b7\u00b7</div>';
-  fd.cal='<div class="sys-msg">CAL\u00b7\u00b7\u00b7</div>';
-  fd.tasks='<div class="sys-msg">TASKS\u00b7\u00b7\u00b7</div>';
+  fd.mail='<div class="f-gap"></div><div class="f-lbl">MAIL \u00b7\u00b7\u00b7</div>';
+  fd.cal='<div class="f-gap"></div><div class="f-lbl">CAL \u00b7\u00b7\u00b7</div>';
+  fd.tasks='<div class="f-gap"></div><div class="f-lbl">TASKS \u00b7\u00b7\u00b7</div>';
   updFeed();loadMarkets();loadWeather();loadGmail();loadCalendar();loadTasks();
 }
 
-// ── GMAIL ──
+// GMAIL
 async function loadGmail(){
   try{
     const r=await gapi('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&labelIds=INBOX');
-    if(!r.messages?.length){fd.mail='<div class="f-gap"></div><div class="f-lbl">MAIL // EMPTY</div>';updFeed();return;}
+    if(!r.messages?.length){fd.mail='<div class="f-gap"></div><div class="f-lbl">MAIL // INBOX EMPTY</div>';updFeed();return;}
     const details=await Promise.all(r.messages.slice(0,8).map(m=>gapi(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`)));
     const unread=details.filter(m=>(m.labelIds||[]).includes('UNREAD')).length;
-    let h=`<div class="f-gap"></div><div class="f-lbl">MAIL // ${unread} UNREAD</div>`;
+    pbStats.mail=Math.round(unread/details.length*100);
+    let h=`<div class="f-gap"></div><div class="f-lbl">MAIL // ${unread} UNREAD / ${details.length} MESSAGES</div>`;
     h+=details.map(msg=>{
       const hdrs=Object.fromEntries((msg.payload?.headers||[]).map(hh=>[hh.name,hh.value]));
       const from=(hdrs.From||'').replace(/<[^>]+>/,'').replace(/"/g,'').trim();
       const subj=hdrs.Subject||'(no subject)';
       const isU=(msg.labelIds||[]).includes('UNREAD');
-      return `<div class="f-row${isU?' hi':''}"><span class="f-i">${isU?'\u25c8':'\u00b7'}</span><span class="f-m">${esc(from)} \u2014 ${esc(subj)}</span></div>`;
+      return `<div class="f-row${isU?' hi':''}"><span class="f-ic">${isU?'\u25c8':'\u00b7'}</span><span class="f-mn">${esc(from)} \u2014 ${esc(subj)}</span></div>`;
     }).join('');
     fd.mail=h;
-  }catch(e){fd.mail=`<div class="f-gap"></div><div class="f-lbl">MAIL // ERR</div><div class="f-row"><span class="f-m">${esc(e.message)}</span></div>`;}
-  updFeed();
+  }catch(e){fd.mail=`<div class="f-gap"></div><div class="f-lbl">MAIL // ERR</div><div class="f-row"><span class="f-mn">${esc(e.message)}</span></div>`;}
+  updatePBs();updFeed();
 }
 
-// ── CALENDAR ──
+// CALENDAR
 async function loadCalendar(){
   try{
     const now=new Date().toISOString(),end=new Date(Date.now()+7*86400000).toISOString();
     const r=await gapi(`https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=10&orderBy=startTime&singleEvents=true&timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}`);
     const items=r.items||[];
-    if(!items.length){fd.cal='<div class="f-gap"></div><div class="f-lbl">CAL // CLEAR</div>';updFeed();return;}
-    let h=`<div class="f-gap"></div><div class="f-lbl">CAL // UPCOMING</div>`;
+    pbStats.cal=Math.min(100,items.length*10);
+    if(!items.length){fd.cal='<div class="f-gap"></div><div class="f-lbl">CAL // ALL CLEAR</div>';updatePBs();updFeed();return;}
+    let h=`<div class="f-gap"></div><div class="f-lbl">CAL // ${items.length} UPCOMING</div>`;
     h+=items.map(ev=>{
       const start=ev.start?.dateTime?new Date(ev.start.dateTime):(ev.start?.date?new Date(ev.start.date+'T00:00:00'):null);
       const ts=start?fmtCal(start):'';
-      return `<div class="f-row"><span class="f-i">\u25b8</span><span class="f-d">${esc(ts)}</span><span class="f-m">\u00a0${esc(ev.summary||'(no title)')}</span></div>`;
+      return `<div class="f-row"><span class="f-ic">\u25b8</span><span class="f-dt">${esc(ts)}</span><span class="f-mn">\u00a0${esc(ev.summary||'(no title)')}</span></div>`;
     }).join('');
     fd.cal=h;
-  }catch(e){fd.cal=`<div class="f-gap"></div><div class="f-lbl">CAL // ERR</div><div class="f-row"><span class="f-m">${esc(e.message)}</span></div>`;}
-  updFeed();
+  }catch(e){fd.cal=`<div class="f-gap"></div><div class="f-lbl">CAL // ERR</div><div class="f-row"><span class="f-mn">${esc(e.message)}</span></div>`;}
+  updatePBs();updFeed();
 }
 function fmtCal(d){
   const t=new Date();t.setHours(0,0,0,0);const dt=new Date(d);dt.setHours(0,0,0,0);
   const diff=Math.round((dt-t)/86400000);
   const day=diff===0?'TODAY':diff===1?'TMR':d.toLocaleDateString('en',{month:'short',day:'numeric'}).toUpperCase();
-  const time=d.toLocaleTimeString('en',{hour:'numeric',minute:'2-digit',hour12:true}).replace(' ','').toUpperCase();
-  return `${day}\u00a0${time}`;
+  return `${day}\u00a0${d.toLocaleTimeString('en',{hour:'numeric',minute:'2-digit',hour12:true}).replace(' ','').toUpperCase()}`;
 }
 
-// ── TASKS ──
+// TASKS
 async function loadTasks(){
   try{
     const lists=await gapi('https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=1');
-    if(!lists.items?.length){fd.tasks='';updFeed();return;}
+    if(!lists.items?.length){fd.tasks='';updatePBs();updFeed();return;}
     const r=await gapi(`https://tasks.googleapis.com/tasks/v1/lists/${lists.items[0].id}/tasks?maxResults=15&showCompleted=false&showHidden=false`);
     const items=r.items||[];
-    if(!items.length){fd.tasks='<div class="f-gap"></div><div class="f-lbl">TASKS // CLEAR</div>';updFeed();return;}
-    let h=`<div class="f-gap"></div><div class="f-lbl">TASKS // ACTIVE</div>`;
+    pbStats.tasks=Math.min(100,items.length*7);
+    if(!items.length){fd.tasks='<div class="f-gap"></div><div class="f-lbl">TASKS // ALL CLEAR</div>';updatePBs();updFeed();return;}
+    let h=`<div class="f-gap"></div><div class="f-lbl">TASKS // ${items.length} ACTIVE</div>`;
     h+=items.map(t=>{
       const due=t.due?new Date(t.due).toLocaleDateString('en',{month:'short',day:'numeric'}).toUpperCase():'';
-      return `<div class="f-row"><span class="f-i">\u25a1</span><span class="f-m">${esc(t.title||'(no title)')}</span>${due?`<span class="f-d">${esc(due)}</span>`:''}</div>`;
+      return `<div class="f-row"><span class="f-ic">\u25a1</span><span class="f-mn">${esc(t.title||'(no title)')}</span>${due?`<span class="f-dt">${esc(due)}</span>`:''}</div>`;
     }).join('');
     fd.tasks=h;
-  }catch(e){fd.tasks=`<div class="f-gap"></div><div class="f-lbl">TASKS // ERR</div><div class="f-row"><span class="f-m">${esc(e.message)}</span></div>`;}
-  updFeed();
+  }catch(e){fd.tasks=`<div class="f-gap"></div><div class="f-lbl">TASKS // ERR</div><div class="f-row"><span class="f-mn">${esc(e.message)}</span></div>`;}
+  updatePBs();updFeed();
 }
 
-// ── MARKETS ──
+// MARKETS
 const ASSETS=[
-  {lbl:'BTC',cg:'bitcoin',                                              fmt:p=>'$'+(p>=1000?(p/1000).toFixed(1)+'k':p.toFixed(0)),tk:'btc'},
-  {lbl:'S&P',cg:'ishares-core-s-p-500-etf-ondo-tokenized-etf',          fmt:p=>'$'+p.toFixed(2),tk:'sp'},
-  {lbl:'TLT',cg:'ishares-20-year-treasury-bond-etf-ondo-tokenized-etf', fmt:p=>'$'+p.toFixed(2),tk:'tlt'},
+  {l:'BTC',cg:'bitcoin',                                              fmt:p=>'$'+(p>=1000?(p/1000).toFixed(1)+'k':p.toFixed(0)),tk:'btc'},
+  {l:'S&P',cg:'ishares-core-s-p-500-etf-ondo-tokenized-etf',          fmt:p=>'$'+p.toFixed(2),tk:'sp'},
+  {l:'TLT',cg:'ishares-20-year-treasury-bond-etf-ondo-tokenized-etf', fmt:p=>'$'+p.toFixed(2),tk:'tlt'},
 ];
 async function loadMarkets(){
   const el=document.getElementById('mkt-body');
   el.innerHTML='<div class="sys-msg">FETCHING\u00b7\u00b7\u00b7</div>';
   const res=await Promise.all(ASSETS.map(a=>fetchCG(a.cg).catch(e=>({error:e.message}))));
-  el.innerHTML=ASSETS.map((a,i)=>{
+  let html='';
+  ASSETS.forEach((a,i)=>{
     const d=res[i];
-    if(d.error)return`<div class="mkt-head"><span class="mkt-lbl">${a.lbl}</span><span class="mkt-slashline"></span></div><div class="mkt-err">${esc(d.error)}</div>`;
+    if(d.error){html+=`<div class="mk-row"><span class="mk-lbl">${a.l}</span><span class="mk-slash"></span></div><div class="mk-err">${esc(d.error)}</div>`;return;}
     const {prices}=d,last=prices[prices.length-1],pct=(last-prices[0])/prices[0]*100,up=pct>=0;
-    const ps=(up?'+':'')+pct.toFixed(2)+'%';
     td[a.tk]=a.fmt(last)+' '+(up?'+':'')+pct.toFixed(1)+'%';
-    return `<div class="mkt-head"><span class="mkt-lbl">${a.lbl}</span><span class="mkt-slashline"></span><span class="mkt-price">${a.fmt(last)}</span><span class="mkt-pct ${up?'up':'dn'}">\u00a0${ps}</span></div><div class="mkt-wave">${mkWave(prices,up)}</div>`;
-  }).join('');
-  updateTicker();
+    html+=`<div class="mk-row"><span class="mk-lbl">${a.l}</span><span class="mk-slash"></span><span class="mk-price">${a.fmt(last)}</span><span class="mk-pct ${up?'up':'dn'}">\u00a0${(up?'+':'')+pct.toFixed(2)+'%'}</span></div>`;
+    html+=`<div class="mk-wave">${mkWave(prices,up,56)}</div>`;
+    if(i<ASSETS.length-1)html+='<div class="sep"></div>';
+  });
+  el.innerHTML=html;updateTicker();
 }
 async function fetchCG(id){
   const r=await fetch(`https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=7&interval=daily`);
   if(!r.ok)throw new Error('CG '+r.status);
-  const d=await r.json();
-  const prices=d.prices.map(p=>p[1]).slice(-7);
+  const d=await r.json(),prices=d.prices.map(p=>p[1]).slice(-7);
   if(prices.length<2)throw new Error('no data');
   return{prices};
 }
-function mkWave(prices,up){
-  const W=300,H=34,PAD=1;
-  const mn=Math.min(...prices),mx=Math.max(...prices),rng=mx-mn||mx*0.01||1,n=prices.length;
-  const isLight=window.matchMedia('(prefers-color-scheme:light)').matches;
-  const stroke=up?(isLight?'#185008':'#68b030'):(isLight?'#780800':'#c04818');
-  const fill=up?(isLight?'rgba(24,80,8,0.09)':'rgba(104,176,48,0.13)'):(isLight?'rgba(120,8,0,0.09)':'rgba(192,72,24,0.13)');
-  const gridC=isLight?'rgba(168,132,56,0.25)':'rgba(80,48,8,0.6)';
+
+function mkWave(prices,up,H){
+  const W=300,PAD=3;
+  const isL=window.matchMedia('(prefers-color-scheme:light)').matches;
+  const stroke=up?(isL?'#1a5408':'#6ab830'):(isL?'#800c00':'#c84020');
+  const fillC =up?(isL?'rgba(26,84,8,0.1)' :'rgba(106,184,48,0.15)'):(isL?'rgba(128,12,0,0.1)':'rgba(200,64,32,0.15)');
+  const gridC =isL?'rgba(120,80,20,0.18)':'rgba(90,52,24,0.5)';
+  const dotC  =isL?'rgba(120,80,20,0.25)':'rgba(90,52,24,0.4)';
+  const bgC   =isL?'rgba(0,0,0,0.04)'    :'rgba(0,0,0,0.25)';
+  const mn=Math.min(...prices),mx=Math.max(...prices),rng=mx-mn||mx*0.005||1,n=prices.length;
   const pts=prices.map((p,i)=>{
     const x=PAD+(i/(n-1))*(W-PAD*2);
     const y=H-PAD-((p-mn)/rng)*(H-PAD*2);
     return[x.toFixed(1),y.toFixed(1)];
   });
   const ptStr=pts.map(p=>p.join(',')).join(' ');
-  const area=`M ${pts[0].join(',')} `+pts.slice(1).map(p=>`L ${p.join(',')}`).join(' ')+` L ${pts[pts.length-1][0]},${H} L ${pts[0][0]},${H} Z`;
-  const grid=[0.33,0.66].map(f=>`<line x1="0" y1="${(H*f).toFixed(1)}" x2="${W}" y2="${(H*f).toFixed(1)}" stroke="${gridC}" stroke-width="0.8"/>`).join('');
-  const dots=pts.map(p=>`<rect x="${(parseFloat(p[0])-1.5).toFixed(1)}" y="${(parseFloat(p[1])-1.5).toFixed(1)}" width="3" height="3" fill="${stroke}" opacity="0.9"/>`).join('');
-  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${grid}<path d="${area}" fill="${fill}"/><polyline points="${ptStr}" fill="none" stroke="${stroke}" stroke-width="2"/>${dots}</svg>`;
+  const area='M '+pts[0].join(',')+ ' '+pts.slice(1).map(p=>'L '+p.join(',')).join(' ')+` L ${pts[pts.length-1][0]},${H} L ${pts[0][0]},${H} Z`;
+  // horizontal grid lines inside the oscilloscope screen
+  const grids=[0.25,0.5,0.75].map(f=>`<line x1="0" y1="${(H*f).toFixed(1)}" x2="${W}" y2="${(H*f).toFixed(1)}" stroke="${gridC}" stroke-width="0.8"/>`).join('');
+  // dot grid inside the screen (oscilloscope)
+  const dotGrid=`<pattern id="dg${up?'u':'d'}" width="10" height="10" patternUnits="userSpaceOnUse"><rect x="4.5" y="4.5" width="1" height="1" fill="${dotC}"/></pattern><rect width="${W}" height="${H}" fill="url(#dg${up?'u':'d'})"/>`;
+  // pixel squares at data points
+  const sqrs=pts.map(p=>`<rect x="${(parseFloat(p[0])-2.5).toFixed(1)}" y="${(parseFloat(p[1])-2.5).toFixed(1)}" width="5" height="5" fill="${stroke}"/>`).join('');
+  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><pattern id="dg${up?'u':'d'}" width="10" height="10" patternUnits="userSpaceOnUse"><rect x="4.5" y="4.5" width="1" height="1" fill="${dotC}"/></pattern></defs><rect width="${W}" height="${H}" fill="${bgC}"/><rect width="${W}" height="${H}" fill="url(#dg${up?'u':'d'})"/>${grids}<path d="${area}" fill="${fillC}"/><polyline points="${ptStr}" fill="none" stroke="${stroke}" stroke-width="2.5"/>${sqrs}</svg>`;
 }
 
-// ── WEATHER ──
+// WEATHER
 function loadWeather(){
   const el=document.getElementById('wx-body');
   el.innerHTML='<div class="sys-msg">ACQUIRING\u00b7\u00b7\u00b7</div>';
@@ -433,54 +437,39 @@ async function fetchWx(lat,lon,el){
 function renderWx(d,lat,lon,el){
   const tz=d.timezone;
   const nowH=new Date().toLocaleString('sv-SE',{timeZone:tz}).slice(0,13).replace(' ','T');
-  const hT=d.hourly.time,hTemp=d.hourly.temperature_2m,hPop=d.hourly.precipitation_probability;
+  const hT=d.hourly.time,hTe=d.hourly.temperature_2m,hP=d.hourly.precipitation_probability;
   const si=Math.max(0,hT.findIndex(t=>t>=nowH));
   const hi=Array.from({length:7},(_,i)=>si+i).filter(i=>i<hT.length);
-  // SVG temperature waveform
-  const temps=hi.map(i=>hTemp[i]);
-  const isLight=window.matchMedia('(prefers-color-scheme:light)').matches;
-  const W=300,H=30,PAD=1;
+  const temps=hi.map(i=>hTe[i]);
+  const W=300,H=34,PAD=3;
   const mn=Math.min(...temps),mx=Math.max(...temps),rng=mx-mn||2,n=temps.length;
-  const rainC=isLight?'#1a3858':'#4878a8';
-  const wxC=isLight?'rgba(22,8,0,0.7)':'rgba(192,160,80,0.8)';
-  const wxF=isLight?'rgba(22,8,0,0.08)':'rgba(192,160,80,0.1)';
-  const gridC=isLight?'rgba(168,132,56,0.25)':'rgba(80,48,8,0.6)';
+  const isL=window.matchMedia('(prefers-color-scheme:light)').matches;
+  const wC=isL?'rgba(26,8,0,0.75)':'rgba(212,176,120,0.85)';
+  const wF=isL?'rgba(26,8,0,0.07)':'rgba(212,176,120,0.1)';
+  const rC=isL?'#1c3c68':'#4880c0';
+  const gC=isL?'rgba(120,80,20,0.18)':'rgba(90,52,24,0.5)';
+  const dC=isL?'rgba(120,80,20,0.22)':'rgba(90,52,24,0.4)';
+  const bgC=isL?'rgba(0,0,0,0.04)':'rgba(0,0,0,0.25)';
   const pts=temps.map((p,i)=>{
     const x=PAD+(i/(n-1))*(W-PAD*2);
     const y=H-PAD-((p-mn)/rng)*(H-PAD*2);
     return[x.toFixed(1),y.toFixed(1)];
   });
   const ptStr=pts.map(p=>p.join(',')).join(' ');
-  const area=`M ${pts[0].join(',')} `+pts.slice(1).map(p=>`L ${p.join(',')}`).join(' ')+` L ${pts[pts.length-1][0]},${H} L ${pts[0][0]},${H} Z`;
-  const grid=`<line x1="0" y1="${(H*0.5).toFixed(1)}" x2="${W}" y2="${(H*0.5).toFixed(1)}" stroke="${gridC}" stroke-width="0.8"/>`;
-  const dots=pts.map((p,i)=>{
-    const pop=hPop[hi[i]]??0;const c=pop>=40?rainC:wxC;
-    return`<rect x="${(parseFloat(p[0])-1.5).toFixed(1)}" y="${(parseFloat(p[1])-1.5).toFixed(1)}" width="3" height="3" fill="${c}"/>`;
-  }).join('');
-  const wxSvg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${grid}<path d="${area}" fill="${wxF}"/><polyline points="${ptStr}" fill="none" stroke="${wxC}" stroke-width="2"/>${dots}</svg>`;
-  // hourly labels
-  const hrHTML=hi.map((idx,pos)=>{
-    const h=parseInt(hT[idx].slice(11,13));
-    const lbl=pos===0?'NOW':(h===0?'12A':h<12?h+'A':h===12?'12P':(h-12)+'P');
-    return`<div class="wx-h"><span class="wx-h-t">${Math.round(hTemp[idx])}\u00b0</span><span class="wx-h-l">${lbl}</span></div>`;
-  }).join('');
-  // daily
+  const area='M '+pts[0].join(',')+' '+pts.slice(1).map(p=>'L '+p.join(',')).join(' ')+` L ${pts[pts.length-1][0]},${H} L ${pts[0][0]},${H} Z`;
+  const grid=`<line x1="0" y1="${(H*0.5).toFixed(1)}" x2="${W}" y2="${(H*0.5).toFixed(1)}" stroke="${gC}" stroke-width="0.8"/>`;
+  const sqrs=pts.map((p,i)=>{const pop=hP[hi[i]]??0;return`<rect x="${(parseFloat(p[0])-2).toFixed(1)}" y="${(parseFloat(p[1])-2).toFixed(1)}" width="4" height="4" fill="${pop>=40?rC:wC}"/>`;}).join('');
+  const wxSvg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><pattern id="wxdg" width="10" height="10" patternUnits="userSpaceOnUse"><rect x="4.5" y="4.5" width="1" height="1" fill="${dC}"/></pattern></defs><rect width="${W}" height="${H}" fill="${bgC}"/><rect width="${W}" height="${H}" fill="url(#wxdg)"/>${grid}<path d="${area}" fill="${wF}"/><polyline points="${ptStr}" fill="none" stroke="${wC}" stroke-width="2"/>${sqrs}</svg>`;
   const DAYS=['SU','MO','TU','WE','TH','FR','SA'];
-  const dyHTML=d.daily.time.slice(0,7).map((t,i)=>{
-    const nm=i===0?'TD':DAYS[new Date(t+'T12:00:00').getDay()];
-    return`<div class="wx-d"><span class="wx-d-n">${nm}</span><span class="wx-d-h">${Math.round(d.daily.temperature_2m_max[i])}\u00b0</span><span class="wx-d-l">${Math.round(d.daily.temperature_2m_min[i])}\u00b0</span></div>`;
-  }).join('');
-  const cur=Math.round(hTemp[si]||hTemp[0]);
+  const hrHTML=hi.map((idx,pos)=>{const h=parseInt(hT[idx].slice(11,13));const l=pos===0?'NOW':(h===0?'12A':h<12?h+'A':h===12?'12P':(h-12)+'P');return`<div class="wx-h"><span class="wx-ht">${Math.round(hTe[idx])}\u00b0</span><span class="wx-hl">${l}</span></div>`;}).join('');
+  const dyHTML=d.daily.time.slice(0,7).map((t,i)=>{const nm=i===0?'TD':DAYS[new Date(t+'T12:00:00').getDay()];return`<div class="wx-d"><span class="wx-dn">${nm}</span><span class="wx-dh">${Math.round(d.daily.temperature_2m_max[i])}\u00b0</span><span class="wx-dl">${Math.round(d.daily.temperature_2m_min[i])}\u00b0</span></div>`;}).join('');
+  const cur=Math.round(hTe[si]||hTe[0]);
   document.getElementById('wx-hr').textContent=`${cur}\u00b0F \u00b7 ${d.timezone_abbreviation||''}`;
   td.wx=`${cur}\u00b0F`;updateTicker();
-  el.innerHTML=`<div class="wx-curve">${wxSvg}</div><div class="wx-hrs">${hrHTML}</div><div class="wx-days">${dyHTML}</div><div class="wx-foot">${Math.abs(lat).toFixed(1)}\u00b0${lat>=0?'N':'S'} ${Math.abs(lon).toFixed(1)}\u00b0${lon>=0?'E':'W'}</div>`;
+  el.innerHTML=`<div class="wx-wave">${wxSvg}</div><div class="wx-hrs">${hrHTML}</div><div class="wx-days">${dyHTML}</div><div class="wx-ft">${Math.abs(lat).toFixed(1)}\u00b0${lat>=0?'N':'S'} ${Math.abs(lon).toFixed(1)}\u00b0${lon>=0?'E':'W'}</div>`;
 }
 
-async function gapi(url){
-  const r=await fetch(url,{headers:{Authorization:`Bearer ${accessToken}`}});
-  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||r.statusText);}
-  return r.json();
-}
+async function gapi(url){const r=await fetch(url,{headers:{Authorization:`Bearer ${accessToken}`}});if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||r.statusText);}return r.json();}
 function esc(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 </script>
 <script src="https://accounts.google.com/gsi/client" onload="initGIS()" async defer></script>
