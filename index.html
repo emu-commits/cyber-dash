@@ -5,221 +5,183 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>cyber-dash</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #0a0a0a; color: #e0e0e0; height: 100dvh; overflow: hidden; }
-
-    /* ── Auth screen ── */
-    #auth-screen {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      height: 100dvh; gap: 24px;
+    :root {
+      --bg:     #0c0700;
+      --fg:     #c8a06a;
+      --dim:    #4a3018;
+      --bright: #f0d080;
+      --border: #2a1808;
+      --up:     #78b858;
+      --dn:     #c05838;
+      --rain:   #5888b8;
+      --font:   'Courier New','Courier',monospace;
     }
-    #auth-screen h1 { font-size: 2rem; letter-spacing: 0.2em; color: #7cf; }
-    #btn-login {
-      padding: 12px 32px; font-size: 1rem; border: 1px solid #7cf;
-      background: transparent; color: #7cf; border-radius: 6px; cursor: pointer;
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg:     #ece0c4;
+        --fg:     #1a0c02;
+        --dim:    #806030;
+        --bright: #080200;
+        --border: #b09060;
+        --up:     #1a5808;
+        --dn:     #801408;
+        --rain:   #1a3e68;
+      }
     }
-    #btn-login:hover { background: rgba(119,204,255,0.1); }
-    #auth-error { color: #f77; font-size: 0.875rem; max-width: 300px; text-align: center; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:var(--font);-webkit-text-size-adjust:100%}
+    body::before{content:'';position:fixed;inset:0;z-index:0;background-image:radial-gradient(circle,var(--border) 1px,transparent 1px);background-size:14px 14px;pointer-events:none}
+    body::after{content:'';position:fixed;inset:0;z-index:500;background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,rgba(0,0,0,0.05) 3px,rgba(0,0,0,0.05) 4px);pointer-events:none}
 
-    /* ── Swipe container ── */
-    #app { display: none; height: 100dvh; overflow: hidden; position: relative; }
-    #panels {
-      display: flex; width: 200%; height: 100%;
-      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
-    }
-    .panel { width: 50%; height: 100%; overflow-y: auto; padding: 16px; }
+    /* AUTH */
+    #auth-screen{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;height:100dvh;padding:32px 20px}
+    .auth-frame{width:100%;max-width:320px;border:1px solid var(--border);padding:28px 24px}
+    .auth-logo{text-align:center;font-size:13px;letter-spacing:4px;color:var(--bright);margin-bottom:3px}
+    .auth-sub{text-align:center;font-size:9px;letter-spacing:3px;color:var(--dim);margin-bottom:24px}
+    .auth-specs{margin-bottom:24px}
+    .auth-row{font-size:10px;line-height:2.2;color:var(--dim)}
+    .auth-row .v{color:var(--fg)}
+    #btn-login{display:block;width:100%;padding:12px 0;font-family:var(--font);font-size:11px;letter-spacing:3px;color:var(--bright);background:transparent;border:1px solid var(--fg);cursor:pointer;text-transform:uppercase}
+    #btn-login:active{background:var(--border)}
+    #auth-error{font-size:9px;color:var(--dn);text-align:center;margin-top:14px;min-height:14px;letter-spacing:1px}
+    @keyframes blink{50%{opacity:0}}
+    .blink{animation:blink 1s step-end infinite}
 
-    /* ── Nav dots ── */
-    #nav {
-      position: fixed; bottom: 12px; left: 0; right: 0;
-      display: flex; justify-content: center; gap: 10px; z-index: 10;
-    }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: #444; transition: background 0.2s; cursor: pointer; }
-    .dot.active { background: #7cf; }
+    /* APP */
+    #app{display:none;position:relative;z-index:10;height:100dvh;overflow:hidden}
+    #panels{display:flex;width:200%;height:100%;transition:transform 0.32s cubic-bezier(0.4,0,0.2,1)}
+    .panel{width:50%;height:100%;display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top,44px);padding-bottom:calc(env(safe-area-inset-bottom,16px) + 26px)}
 
-    /* ── User bar ── */
-    #user-bar {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 10;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 8px 16px; background: rgba(10,10,10,0.9); border-bottom: 1px solid #222;
-      backdrop-filter: blur(8px);
-    }
-    #user-bar span { font-size: 0.8rem; color: #888; }
-    #user-bar button { font-size: 0.75rem; color: #f77; background: none; border: 1px solid #f774; border-radius: 4px; padding: 4px 10px; cursor: pointer; }
-    .panel { padding-top: 52px; padding-bottom: 36px; }
+    /* PTR */
+    #ptr{flex-shrink:0;height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:8px;letter-spacing:3px;color:var(--dim)}
+    #ptr.releasing{transition:height 0.25s ease}
 
-    /* ── Panel labels ── */
-    .panel-title { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: #555; margin-bottom: 16px; }
+    /* TICKER */
+    #ticker-wrap{flex-shrink:0;height:24px;overflow:hidden;border-bottom:1px solid var(--border);display:flex;align-items:center}
+    #ticker-track{display:inline-block;white-space:nowrap;font-size:9px;letter-spacing:2px;color:var(--fg);animation:ticker-scroll 40s linear infinite;will-change:transform}
+    @keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
-    /* ── Cards ── */
-    .card { background: #111; border: 1px solid #222; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
-    .card-title { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: #7cf; margin-bottom: 10px; }
+    /* SECTIONS */
+    .sec{flex-shrink:0;padding:0 10px;border-bottom:1px solid var(--border)}
+    #sec-data{flex:1;min-height:0;display:flex;flex-direction:column;border-bottom:none}
+    .sec-head{height:20px;display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:2px;color:var(--dim)}
+    .s-lbl{color:var(--fg);letter-spacing:3px;font-size:9px}
+    .s-hr{flex:1;height:1px;background:var(--border)}
+    .s-meta{font-size:8px;color:var(--dim);letter-spacing:1px}
+    .s-btn{font-family:var(--font);font-size:8px;letter-spacing:1px;color:var(--dim);background:none;border:none;cursor:pointer;padding:0;margin-left:2px}
+    .s-btn:active{color:var(--dn)}
 
-    /* ── Gmail ── */
-    .email-item { padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
-    .email-item:last-child { border-bottom: none; }
-    .email-from { font-size: 0.8rem; font-weight: 600; color: #ddd; }
-    .email-subject { font-size: 0.8rem; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .email-snippet { font-size: 0.72rem; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-    .email-unread .email-from { color: #fff; }
-    .email-unread .email-subject { color: #ccc; }
+    /* MARKETS */
+    .mkt-row{display:flex;align-items:center;height:26px;gap:6px}
+    .mkt-lbl{font-size:9px;letter-spacing:2px;color:var(--dim);width:30px;flex-shrink:0}
+    .mkt-spark{flex:1;height:18px;overflow:hidden}
+    .mkt-spark svg{width:100%;height:100%;display:block}
+    .mkt-val{font-size:10px;color:var(--bright);width:54px;text-align:right;flex-shrink:0}
+    .mkt-pct{font-size:9px;width:50px;text-align:right;flex-shrink:0}
+    .mkt-pct.up{color:var(--up)}
+    .mkt-pct.dn{color:var(--dn)}
+    .mkt-err{font-size:8px;color:var(--dim);flex:1}
 
-    /* ── Calendar ── */
-    .cal-item { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid #1a1a1a; align-items: flex-start; }
-    .cal-item:last-child { border-bottom: none; }
-    .cal-time { font-size: 0.72rem; color: #7cf; min-width: 52px; padding-top: 1px; white-space: pre; }
-    .cal-summary { font-size: 0.82rem; color: #ddd; }
-    .cal-location { font-size: 0.72rem; color: #555; margin-top: 2px; }
+    /* WEATHER */
+    .wx-hr-row{display:flex;align-items:flex-end;height:44px;gap:0}
+    .wx-h{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+    .wx-h-bar{font-size:13px;line-height:1;color:var(--fg)}
+    .wx-h-bar.wet{color:var(--rain)}
+    .wx-h-temp{font-size:7px;color:var(--dim);line-height:1.6}
+    .wx-h-lbl{font-size:7px;color:var(--dim);letter-spacing:0;line-height:1.3}
+    .wx-dy-row{display:flex;gap:0;height:28px;align-items:center}
+    .wx-d{flex:1;display:flex;flex-direction:column;align-items:center}
+    .wx-d-name{font-size:7px;color:var(--dim);line-height:1.4}
+    .wx-d-hi{font-size:9px;color:var(--bright);line-height:1.2}
+    .wx-d-lo{font-size:7px;color:var(--dim);line-height:1.2}
+    .wx-foot{font-size:7px;color:var(--dim);text-align:right;letter-spacing:1px;padding:2px 0 3px}
 
-    /* ── Tasks ── */
-    .task-item { display: flex; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid #1a1a1a; }
-    .task-item:last-child { border-bottom: none; }
-    .task-check { width: 14px; height: 14px; border: 1px solid #444; border-radius: 3px; flex-shrink: 0; }
-    .task-check.done { background: #2a5; border-color: #2a5; }
-    .task-title { font-size: 0.82rem; color: #ddd; }
-    .task-due { font-size: 0.7rem; color: #555; margin-left: auto; white-space: nowrap; }
+    /* DATA FEED */
+    #feed-window{flex:1;min-height:0;overflow:hidden;position:relative}
+    #feed-content{position:absolute;top:0;left:0;right:0;padding:2px 0 24px;will-change:transform}
+    .f-sec-lbl{font-size:8px;letter-spacing:2px;color:var(--dim);border-bottom:1px solid var(--border);padding:0 10px 2px;margin-bottom:1px}
+    .f-row{display:flex;align-items:baseline;padding:0 10px;font-size:10px;line-height:1.85;gap:5px;color:var(--fg)}
+    .f-row.hi{color:var(--bright)}
+    .f-ic{color:var(--dim);flex-shrink:0;font-size:9px}
+    .f-main{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    .f-meta{font-size:8px;color:var(--dim);flex-shrink:0;letter-spacing:1px}
+    .f-gap{height:5px}
 
-    /* ── Loading / empty ── */
-    .loading { color: #444; font-size: 0.8rem; text-align: center; padding: 20px 0; }
-    .empty { color: #333; font-size: 0.8rem; text-align: center; padding: 16px 0; }
+    /* NAV */
+    #nav{position:fixed;bottom:calc(env(safe-area-inset-bottom,8px) + 4px);left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:100}
+    .dot{width:5px;height:5px;border-radius:50%;background:var(--dim);display:block;text-decoration:none;cursor:pointer;transition:background 0.2s}
+    .dot.active{background:var(--fg)}
 
-    /* ── Markets ── */
-    .mkt-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 0; border-bottom: 1px solid #1a1a1a;
-    }
-    .mkt-row:last-child { border-bottom: none; }
-    .mkt-name { font-size: 0.72rem; color: #888; min-width: 34px; }
-    .mkt-spark { flex: 1; display: flex; align-items: center; }
-    .mkt-spark svg { width: 100%; height: 36px; overflow: visible; }
-    .mkt-info { text-align: right; }
-    .mkt-price { font-size: 0.8rem; color: #ddd; white-space: nowrap; }
-    .mkt-chg { font-size: 0.68rem; margin-top: 1px; }
-    .mkt-chg.up { color: #4d4; }
-    .mkt-chg.dn { color: #d44; }
-    .mkt-error { font-size: 0.72rem; color: #555; font-style: italic; }
+    /* GEMINI */
+    #panel-gemini{align-items:center;justify-content:center;text-align:center;gap:18px}
+    .gem-grid{font-size:9px;color:var(--border);letter-spacing:2px;line-height:1.6;white-space:pre;margin-bottom:4px}
+    .gem-sigil{font-size:40px;color:var(--fg);line-height:1}
+    .gem-lbl{font-size:9px;letter-spacing:4px;color:var(--dim)}
+    #btn-open-gemini{padding:12px 32px;font-family:var(--font);font-size:11px;letter-spacing:3px;color:var(--bright);background:transparent;border:1px solid var(--fg);text-decoration:none;cursor:pointer;display:inline-block}
+    #btn-open-gemini:active{background:var(--border)}
+    .gem-note{font-size:8px;color:var(--dim);max-width:220px;line-height:2;letter-spacing:1px}
 
-    /* ── Weather ── */
-    .wx-hourly {
-      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;
-      scrollbar-width: none;
-    }
-    .wx-hourly::-webkit-scrollbar { display: none; }
-    .wx-hour {
-      display: flex; flex-direction: column; align-items: center; gap: 3px;
-      min-width: 44px; padding: 6px 4px; border-radius: 6px;
-      background: #0d0d0d; border: 1px solid #1a1a1a; flex-shrink: 0;
-    }
-    .wx-hour.now { border-color: #7cf4; background: #0d1a22; }
-    .wx-hour-time { font-size: 0.62rem; color: #555; }
-    .wx-hour-temp { font-size: 0.82rem; color: #ddd; font-weight: 600; }
-    .wx-hour-rain { font-size: 0.62rem; color: #7af; }
-    .wx-daily { margin-top: 12px; }
-    .wx-day {
-      display: flex; align-items: center; padding: 6px 0;
-      border-bottom: 1px solid #1a1a1a; gap: 8px;
-    }
-    .wx-day:last-child { border-bottom: none; }
-    .wx-day-name { font-size: 0.75rem; color: #888; min-width: 36px; }
-    .wx-day-bar-wrap { flex: 1; display: flex; align-items: center; gap: 4px; }
-    .wx-day-lo { font-size: 0.72rem; color: #555; min-width: 28px; text-align: right; }
-    .wx-day-hi { font-size: 0.72rem; color: #ddd; min-width: 28px; }
-    .wx-day-bar-bg { flex: 1; height: 4px; background: #1a1a1a; border-radius: 2px; position: relative; }
-    .wx-day-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #4af, #fa4); position: absolute; }
-    .wx-day-rain { font-size: 0.68rem; color: #7af; min-width: 32px; text-align: right; }
-    .wx-location { font-size: 0.65rem; color: #333; margin-top: 8px; }
-
-    /* ── Refresh button ── */
-    .refresh-btn { font-size: 0.75rem; color: #7cf4; background: none; border: none; cursor: pointer; float: right; margin-top: -2px; }
-    .refresh-btn:hover { color: #7cf; }
-
-    /* ── Pull to refresh ── */
-    #ptr {
-      display: flex; align-items: center; justify-content: center;
-      height: 0; overflow: hidden; gap: 8px; color: #7cf; font-size: 0.75rem;
-    }
-    #ptr.releasing { transition: height 0.25s ease; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .ptr-spinner {
-      width: 16px; height: 16px; border: 2px solid #7cf3;
-      border-top-color: #7cf; border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-
-    /* ── Gemini launcher panel ── */
-    #panel-gemini {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 28px; text-align: center;
-    }
-    #panel-gemini .panel-title { align-self: flex-start; }
-    .gemini-logo { font-size: 3rem; line-height: 1; }
-    .gemini-label { font-size: 0.75rem; color: #555; max-width: 240px; line-height: 1.5; }
-    #btn-open-gemini {
-      padding: 14px 40px; font-size: 1rem; border: 1px solid #7cf;
-      background: transparent; color: #7cf; border-radius: 8px; cursor: pointer;
-      letter-spacing: 0.05em; text-decoration: none; display: inline-block;
-    }
-    #btn-open-gemini:hover { background: rgba(119,204,255,0.1); }
-    .gemini-note { font-size: 0.7rem; color: #333; }
+    /* UTIL */
+    .sys-msg{padding:0 10px;font-size:9px;color:var(--dim);letter-spacing:2px;line-height:2.5}
   </style>
 </head>
 <body>
 
-<!-- Auth screen -->
 <div id="auth-screen">
-  <h1>cyber-dash</h1>
-  <button id="btn-login" onclick="startLogin()">Sign in with Google</button>
-  <div id="auth-error"></div>
+  <div class="auth-frame">
+    <div class="auth-logo">&#9672; CYBER-DASH &#9672;</div>
+    <div class="auth-sub">SYSTEM ACCESS TERMINAL</div>
+    <div class="auth-specs">
+      <div class="auth-row">&#9658; PROTOCOL&#58; <span class="v">OAUTH 2.0 READ-ONLY</span></div>
+      <div class="auth-row">&#9658; CHANNELS&#58; <span class="v">GMAIL &#183; CAL &#183; TASKS</span></div>
+      <div class="auth-row">&#9658; INTEL&#58; <span class="v">MARKETS &#183; WEATHER</span></div>
+      <div class="auth-row">&#9658; STATUS&#58; <span class="v">AWAITING AUTH<span class="blink">_</span></span></div>
+    </div>
+    <button id="btn-login" onclick="startLogin()">[ AUTHENTICATE ]</button>
+    <div id="auth-error"></div>
+  </div>
 </div>
 
-<!-- Main app -->
 <div id="app">
-  <div id="user-bar">
-    <span id="user-email"></span>
-    <button onclick="signOut()">sign out</button>
-  </div>
   <div id="panels">
-    <!-- Panel 0: Dashboard -->
+
     <div class="panel" id="panel-dash">
-      <div id="ptr"><div class="ptr-spinner"></div><span id="ptr-label"></span></div>
-      <div class="panel-title">dashboard</div>
-
-      <div class="card">
-        <div class="card-title">markets <button class="refresh-btn" onclick="loadMarkets()">↻</button></div>
-        <div id="markets-body"><div class="loading">loading…</div></div>
+      <div id="ptr"><span id="ptr-label">&#8595; SYNC</span></div>
+      <div id="ticker-wrap">
+        <div id="ticker-track"><span id="ticker-a">&#9672; CYBER-DASH &#183; LOADING &#183; </span><span id="ticker-b">&#9672; CYBER-DASH &#183; LOADING &#183; </span></div>
       </div>
-
-      <div class="card">
-        <div class="card-title">weather <button class="refresh-btn" onclick="loadWeather()">↻</button></div>
-        <div id="wx-body"><div class="loading">locating…</div></div>
+      <div class="sec" id="sec-mkt">
+        <div class="sec-head"><span class="s-lbl">MKT</span><span class="s-hr"></span><span class="s-meta">7D&#183;SPOT</span></div>
+        <div id="markets-body"><div class="sys-msg">FETCHING&#183;&#183;&#183;</div></div>
       </div>
-
-      <div class="card">
-        <div class="card-title">inbox <button class="refresh-btn" onclick="loadAll()">↻</button></div>
-        <div id="gmail-list"><div class="loading">loading…</div></div>
+      <div class="sec" id="sec-wx">
+        <div class="sec-head"><span class="s-lbl">WX</span><span class="s-hr"></span><span class="s-meta" id="wx-head-r">LOCATING&#183;&#183;&#183;</span></div>
+        <div id="wx-body"><div class="sys-msg">ACQUIRING POSITION&#183;&#183;&#183;</div></div>
       </div>
-
-      <div class="card">
-        <div class="card-title">upcoming events</div>
-        <div id="cal-list"><div class="loading">loading…</div></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">tasks</div>
-        <div id="tasks-list"><div class="loading">loading…</div></div>
+      <div class="sec" id="sec-data">
+        <div class="sec-head">
+          <span class="s-lbl">SYS</span><span class="s-hr"></span>
+          <span class="s-meta" id="data-email"></span>
+          <button class="s-btn" onclick="signOut()">[ EXIT ]</button>
+        </div>
+        <div id="feed-window">
+          <div id="feed-content"><div class="sys-msg">LOADING DATA STREAM&#183;&#183;&#183;</div></div>
+        </div>
       </div>
     </div>
 
-    <!-- Panel 1: Gemini launcher -->
     <div class="panel" id="panel-gemini">
-      <div class="panel-title">gemini</div>
-      <div class="gemini-logo">✦</div>
-      <a id="btn-open-gemini" href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer">Open Gemini</a>
-      <div class="gemini-label">Opens the Gemini app with your existing workspace permissions — email, calendar, and tasks access included.</div>
-      <div class="gemini-note" id="gemini-platform"></div>
+      <div class="gem-grid">&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;
+&#183;&#9632;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#9632;&#183;
+&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;
+&#183;&#9632;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#9632;&#183;&#183;&#183;&#9632;&#183;</div>
+      <div class="gem-sigil">&#10022;</div>
+      <div class="gem-lbl">// GEMINI //</div>
+      <a id="btn-open-gemini" href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer">[ OPEN GEMINI ]</a>
+      <div class="gem-note">LAUNCHES GEMINI WITH WORKSPACE ACCESS &#183; EMAIL &#183; CALENDAR &#183; TASKS</div>
     </div>
-  </div>
 
+  </div>
   <div id="nav">
     <div class="dot active" onclick="goToPanel(0)"></div>
     <a class="dot" href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer"></a>
@@ -227,83 +189,48 @@
 </div>
 
 <script>
-// ─────────────────────────────────────────────
-// CONFIG
-// Register this page's origin as an Authorized JavaScript Origin
-// in Google Cloud Console → APIs & Services → Credentials.
-// Enable: Gmail API, Google Calendar API, Tasks API
-// For markets (S&P + 10Y): free key at alphavantage.co → set AV_KEY below
-// ─────────────────────────────────────────────
 const CLIENT_ID = '643098083415-aldnf1l4k3m7r19airb07s42bolg9e16.apps.googleusercontent.com';
-
-// Read-only scopes — dashboard only. Write actions handled by native Gemini app via deep link.
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/tasks.readonly',
-  'openid', 'email', 'profile'
+  'openid','email','profile'
 ].join(' ');
 
-// ─────────────────────────────────────────────
-// STATE
-// ─────────────────────────────────────────────
-let accessToken = null;
-let tokenClient = null;
-let currentPanel = 0;
+let accessToken = null, tokenClient = null, currentPanel = 0;
 
-// ─────────────────────────────────────────────
-// GOOGLE IDENTITY SERVICES
-// ─────────────────────────────────────────────
+// ── GIS ──
 function initGIS() {
   tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
+    client_id: CLIENT_ID, scope: SCOPES,
     callback: (resp) => {
-      if (resp.error) {
-        // popup_closed_by_user is not an error worth showing
-        if (resp.error !== 'popup_closed_by_user') showAuthError(resp.error);
-        return;
-      }
+      if (resp.error) { if (resp.error !== 'popup_closed_by_user') showAuthError(resp.error); return; }
       accessToken = resp.access_token;
-      // Refresh token every 55 min (tokens expire after 60); fine to call from
-      // a timeout since it re-uses an existing Google session without UI
-      setTimeout(() => tokenClient.requestAccessToken({
-        prompt: '', login_hint: localStorage.getItem('cyberdash_hint') || ''
-      }), 55 * 60 * 1000);
+      setTimeout(() => tokenClient.requestAccessToken({ prompt:'', login_hint: localStorage.getItem('cyberdash_hint')||'' }), 55*60*1000);
       onSignedIn();
     },
-    error_callback: (err) => {
-      // popup_failed_to_open fires when called outside a user gesture (e.g. auto-login
-      // attempts). Suppress it — the login button is still visible and functional.
-      if ((err.type || '') === 'popup_failed_to_open') return;
-      showAuthError(err.type || JSON.stringify(err));
-    }
+    error_callback: (err) => { if ((err.type||'') === 'popup_failed_to_open') return; showAuthError(err.type||JSON.stringify(err)); }
   });
 }
-
 function startLogin() {
-  if (!tokenClient) { showAuthError('Google Identity Services not loaded yet.'); return; }
+  if (!tokenClient) { showAuthError('GIS NOT LOADED'); return; }
   showAuthError('');
-  // login_hint skips account picker on repeat visits
-  tokenClient.requestAccessToken({ prompt: '', login_hint: localStorage.getItem('cyberdash_hint') || '' });
+  tokenClient.requestAccessToken({ prompt:'', login_hint: localStorage.getItem('cyberdash_hint')||'' });
 }
-
-function showAuthError(msg) {
-  document.getElementById('auth-error').textContent = msg;
-}
+function showAuthError(msg) { document.getElementById('auth-error').textContent = msg; }
 
 async function onSignedIn() {
   const info = await gapi('https://www.googleapis.com/oauth2/v3/userinfo');
-  document.getElementById('user-email').textContent = info.email || '';
-  localStorage.setItem('cyberdash_hint', info.email || '');
+  const email = info.email || '';
+  document.getElementById('data-email').textContent = email;
+  localStorage.setItem('cyberdash_hint', email);
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  initGeminiPanel();
+  updateTicker();
   loadAll();
 }
-
 function signOut() {
-  google.accounts.oauth2.revoke(accessToken, () => {});
+  google.accounts.oauth2.revoke(accessToken, ()=>{});
   accessToken = null;
   localStorage.removeItem('cyberdash_hint');
   document.getElementById('app').style.display = 'none';
@@ -311,398 +238,299 @@ function signOut() {
   document.getElementById('auth-error').textContent = '';
 }
 
-// ─────────────────────────────────────────────
-// SWIPE (horizontal — panel nav / Gemini launch)
-// ─────────────────────────────────────────────
-let touchStartX = 0, touchStartY = 0, isSwiping = false;
-
-document.addEventListener('touchstart', e => {
-  touchStartX = e.touches[0].clientX;
-  touchStartY = e.touches[0].clientY;
-  isSwiping = false;
-}, { passive: true });
-
-document.addEventListener('touchmove', e => {
-  const dx = e.touches[0].clientX - touchStartX;
-  const dy = e.touches[0].clientY - touchStartY;
-  if (!isSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) isSwiping = true;
-}, { passive: true });
-
+// ── SWIPE ──
+let touchStartX=0, touchStartY=0, isSwiping=false;
+document.addEventListener('touchstart', e => { touchStartX=e.touches[0].clientX; touchStartY=e.touches[0].clientY; isSwiping=false; }, {passive:true});
+document.addEventListener('touchmove', e => { const dx=e.touches[0].clientX-touchStartX, dy=e.touches[0].clientY-touchStartY; if(!isSwiping&&Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>10) isSwiping=true; }, {passive:true});
 document.addEventListener('touchend', e => {
   if (!isSwiping) return;
   const dx = e.changedTouches[0].clientX - touchStartX;
-  if (Math.abs(dx) > 50) {
-    if (dx < 0 && currentPanel === 0) {
-      // window.location.href always works from a touch handler on iOS.
-      // User taps the iOS back button (<) to return to cyber-dash.
-      window.location.href = 'https://gemini.google.com/app';
-    }
-    else if (dx > 0 && currentPanel === 1) goToPanel(0);
+  if (Math.abs(dx)>50) {
+    if (dx<0 && currentPanel===0) window.location.href='https://gemini.google.com/app';
+    else if (dx>0 && currentPanel===1) goToPanel(0);
   }
 });
-
 function goToPanel(idx) {
   currentPanel = idx;
-  document.getElementById('panels').style.transform = `translateX(-${idx * 50}%)`;
-  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+  document.getElementById('panels').style.transform = `translateX(-${idx*50}%)`;
+  document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('active', i===idx));
 }
 
-// ─────────────────────────────────────────────
-// PULL TO REFRESH
-// ─────────────────────────────────────────────
+// ── PULL TO REFRESH ──
 const dashPanel = document.getElementById('panel-dash');
 const ptrEl = document.getElementById('ptr');
 const ptrLabel = document.getElementById('ptr-label');
 const PTR_THRESHOLD = 60;
-let ptrState = 'idle'; // idle | watching | pulling
-let ptrStartX = 0, ptrStartY = 0, ptrDist = 0;
-
+let ptrState='idle', ptrStartX=0, ptrStartY=0, ptrDist=0;
 dashPanel.addEventListener('touchstart', e => {
-  if (dashPanel.scrollTop <= 0) {
-    ptrStartX = e.touches[0].clientX;
-    ptrStartY = e.touches[0].clientY;
-    ptrState = 'watching';
-    ptrDist = 0;
-  }
-}, { passive: true });
-
+  if (dashPanel.scrollTop<=0) { ptrStartX=e.touches[0].clientX; ptrStartY=e.touches[0].clientY; ptrState='watching'; ptrDist=0; }
+}, {passive:true});
 dashPanel.addEventListener('touchmove', e => {
-  if (ptrState === 'idle') return;
-  const dy = e.touches[0].clientY - ptrStartY;
-  const dx = Math.abs(e.touches[0].clientX - ptrStartX);
-
-  if (ptrState === 'watching') {
-    if (dx > 10) { ptrState = 'idle'; return; } // horizontal — let swipe handler take it
-    if (dy > 8) ptrState = 'pulling'; else return;
-  }
-
-  ptrDist = Math.max(0, Math.min(dy * 0.45, PTR_THRESHOLD * 1.2));
-  ptrEl.style.height = ptrDist + 'px';
-  ptrLabel.textContent = ptrDist >= PTR_THRESHOLD ? 'release to refresh' : 'pull to refresh';
-}, { passive: true });
-
-dashPanel.addEventListener('touchend', () => {
-  if (ptrState !== 'pulling') { ptrState = 'idle'; return; }
-  ptrState = 'idle';
-  ptrEl.classList.add('releasing');
-  if (ptrDist >= PTR_THRESHOLD) {
-    ptrEl.style.height = '44px';
-    ptrLabel.textContent = 'refreshing…';
+  if (ptrState==='idle') return;
+  const dy=e.touches[0].clientY-ptrStartY, dx=Math.abs(e.touches[0].clientX-ptrStartX);
+  if (ptrState==='watching') { if(dx>10){ptrState='idle';return;} if(dy>8)ptrState='pulling'; else return; }
+  ptrDist=Math.max(0,Math.min(dy*0.45,PTR_THRESHOLD*1.2));
+  ptrEl.style.height=ptrDist+'px';
+  ptrLabel.textContent=ptrDist>=PTR_THRESHOLD?'RELEASE TO SYNC':'PULL TO SYNC';
+}, {passive:true});
+dashPanel.addEventListener('touchend', ()=>{
+  if (ptrState!=='pulling'){ptrState='idle';return;}
+  ptrState='idle'; ptrEl.classList.add('releasing');
+  if (ptrDist>=PTR_THRESHOLD) {
+    ptrEl.style.height='32px'; ptrLabel.textContent='SYNCING...';
     loadAll();
-    setTimeout(() => { ptrEl.style.height = '0'; setTimeout(() => ptrEl.classList.remove('releasing'), 300); }, 1200);
-  } else {
-    ptrEl.style.height = '0';
-    setTimeout(() => ptrEl.classList.remove('releasing'), 300);
-  }
-  ptrDist = 0;
+    setTimeout(()=>{ ptrEl.style.height='0'; setTimeout(()=>ptrEl.classList.remove('releasing'),300); },1400);
+  } else { ptrEl.style.height='0'; setTimeout(()=>ptrEl.classList.remove('releasing'),300); }
+  ptrDist=0;
 });
 
-// ─────────────────────────────────────────────
-// DASHBOARD — direct Google API calls
-// (Gemini tools also call these same APIs)
-// ─────────────────────────────────────────────
+// ── FEED ──
+const feedState = { mail:null, cal:null, tasks:null };
+let feedTimer = null;
+function updateFeed() {
+  const el = document.getElementById('feed-content');
+  if (!el) return;
+  let html = (feedState.mail||'') + (feedState.cal||'') + (feedState.tasks||'');
+  if (!html) html = '<div class="sys-msg">LOADING...</div>';
+  el.style.transition = 'none';
+  el.style.transform = 'translateY(0)';
+  el.innerHTML = html;
+  clearTimeout(feedTimer);
+  feedTimer = setTimeout(startFeedScroll, 900);
+}
+function startFeedScroll() {
+  const content = document.getElementById('feed-content');
+  const win = document.getElementById('feed-window');
+  if (!content||!win) return;
+  const dist = content.scrollHeight - win.clientHeight;
+  if (dist < 30) return;
+  const secs = dist / 22;
+  content.style.transition = `transform ${secs}s linear`;
+  content.style.transform = `translateY(-${dist}px)`;
+  feedTimer = setTimeout(()=>{
+    content.style.transition = 'none';
+    content.style.transform = 'translateY(0)';
+    feedTimer = setTimeout(startFeedScroll, 2500);
+  }, secs*1000 + 3000);
+}
+
+// ── TICKER ──
+const tickerData = {};
+function updateTicker() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const parts = [`\u25c8 ${hh}:${mm}`];
+  if (tickerData.btc) parts.push(`BTC ${tickerData.btc}`);
+  if (tickerData.sp)  parts.push(`S\u0026P ${tickerData.sp}`);
+  if (tickerData.tlt) parts.push(`TLT ${tickerData.tlt}`);
+  if (tickerData.wx)  parts.push(`WX ${tickerData.wx}`);
+  const str = parts.join(' \u00b7 ') + ' \u00b7 ';
+  ['ticker-a','ticker-b'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=str; });
+  const dur = Math.max(18, str.length * 0.38);
+  const track = document.getElementById('ticker-track');
+  if (track) track.style.animationDuration = dur+'s';
+}
+setInterval(updateTicker, 60000);
+
+// ── LOAD ALL ──
+function loadAll() {
+  feedState.mail  = '<div class="sys-msg">MAIL\u00b7\u00b7\u00b7</div>';
+  feedState.cal   = '<div class="sys-msg">CAL\u00b7\u00b7\u00b7</div>';
+  feedState.tasks = '<div class="sys-msg">TASKS\u00b7\u00b7\u00b7</div>';
+  updateFeed();
+  loadMarkets(); loadWeather(); loadGmail(); loadCalendar(); loadTasks();
+}
+
+// ── GMAIL ──
 async function loadGmail() {
-  const el = document.getElementById('gmail-list');
-  el.innerHTML = '<div class="loading">loading…</div>';
   try {
     const r = await gapi('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&labelIds=INBOX');
-    if (!r.messages?.length) { el.innerHTML = '<div class="empty">no messages</div>'; return; }
+    if (!r.messages?.length) { feedState.mail='<div class="f-gap"></div><div class="f-sec-lbl">MAIL // EMPTY</div>'; updateFeed(); return; }
     const details = await Promise.all(
-      r.messages.slice(0, 8).map(m =>
-        gapi(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`)
-      )
+      r.messages.slice(0,8).map(m => gapi(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`))
     );
-    el.innerHTML = details.map(msg => {
-      const hdrs = Object.fromEntries((msg.payload?.headers || []).map(h => [h.name, h.value]));
-      const from = (hdrs.From || '').replace(/<.*>/, '').trim() || hdrs.From || '';
-      const subject = hdrs.Subject || '(no subject)';
-      const unread = (msg.labelIds || []).includes('UNREAD');
-      return `<div class="email-item${unread ? ' email-unread' : ''}">
-        <div class="email-from">${esc(from)}</div>
-        <div class="email-subject">${esc(subject)}</div>
-        <div class="email-snippet">${esc(msg.snippet || '')}</div>
-      </div>`;
+    const unread = details.filter(m=>(m.labelIds||[]).includes('UNREAD')).length;
+    let html = `<div class="f-gap"></div><div class="f-sec-lbl">MAIL // ${unread} UNREAD</div>`;
+    html += details.map(msg => {
+      const hdrs = Object.fromEntries((msg.payload?.headers||[]).map(h=>[h.name,h.value]));
+      const from = (hdrs.From||'').replace(/<[^>]+>/,'').replace(/"/g,'').trim();
+      const subj = hdrs.Subject||'(no subject)';
+      const isUnread = (msg.labelIds||[]).includes('UNREAD');
+      return `<div class="f-row${isUnread?' hi':''}"><span class="f-ic">${isUnread?'\u25c8':'\u00b7'}</span><span class="f-main">${esc(from)} \u2014 ${esc(subj)}</span></div>`;
     }).join('');
-  } catch(e) { el.innerHTML = `<div class="empty">error: ${esc(e.message)}</div>`; }
+    feedState.mail = html;
+  } catch(e) {
+    feedState.mail = `<div class="f-gap"></div><div class="f-sec-lbl">MAIL // ERR</div><div class="f-row"><span class="f-main">${esc(e.message)}</span></div>`;
+  }
+  updateFeed();
 }
 
+// ── CALENDAR ──
 async function loadCalendar() {
-  const el = document.getElementById('cal-list');
-  el.innerHTML = '<div class="loading">loading…</div>';
   try {
     const now = new Date().toISOString();
-    const end = new Date(Date.now() + 7 * 86400000).toISOString();
+    const end = new Date(Date.now()+7*86400000).toISOString();
     const r = await gapi(`https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=10&orderBy=startTime&singleEvents=true&timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}`);
-    const items = r.items || [];
-    if (!items.length) { el.innerHTML = '<div class="empty">no upcoming events</div>'; return; }
-    el.innerHTML = items.map(ev => {
-      const start = ev.start?.dateTime ? new Date(ev.start.dateTime) : (ev.start?.date ? new Date(ev.start.date + 'T00:00:00') : null);
+    const items = r.items||[];
+    if (!items.length) { feedState.cal='<div class="f-gap"></div><div class="f-sec-lbl">CAL // CLEAR</div>'; updateFeed(); return; }
+    let html = `<div class="f-gap"></div><div class="f-sec-lbl">CAL // UPCOMING</div>`;
+    html += items.map(ev => {
+      const start = ev.start?.dateTime ? new Date(ev.start.dateTime) : (ev.start?.date ? new Date(ev.start.date+'T00:00:00') : null);
       const timeStr = start ? fmtCalTime(start) : '';
-      return `<div class="cal-item">
-        <div class="cal-time">${esc(timeStr)}</div>
-        <div>
-          <div class="cal-summary">${esc(ev.summary || '(no title)')}</div>
-          ${ev.location ? `<div class="cal-location">${esc(ev.location)}</div>` : ''}
-        </div>
-      </div>`;
+      return `<div class="f-row"><span class="f-ic">\u25b8</span><span class="f-meta">${esc(timeStr)}</span><span class="f-main">${esc(ev.summary||'(no title)')}</span></div>`;
     }).join('');
-  } catch(e) { el.innerHTML = `<div class="empty">error: ${esc(e.message)}</div>`; }
+    feedState.cal = html;
+  } catch(e) {
+    feedState.cal = `<div class="f-gap"></div><div class="f-sec-lbl">CAL // ERR</div><div class="f-row"><span class="f-main">${esc(e.message)}</span></div>`;
+  }
+  updateFeed();
 }
-
 function fmtCalTime(d) {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const t = new Date(d); t.setHours(0,0,0,0);
-  const diff = Math.round((t - today) / 86400000);
-  const day = diff === 0 ? 'today' : diff === 1 ? 'tmrw' : d.toLocaleDateString('en', {month:'short', day:'numeric'});
-  const time = d.toLocaleTimeString('en', {hour:'numeric', minute:'2-digit', hour12:true});
-  return `${day}\n${time}`;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const t=new Date(d); t.setHours(0,0,0,0);
+  const diff=Math.round((t-today)/86400000);
+  const day=diff===0?'TODAY':diff===1?'TMR':d.toLocaleDateString('en',{month:'short',day:'numeric'}).toUpperCase();
+  const time=d.toLocaleTimeString('en',{hour:'numeric',minute:'2-digit',hour12:true}).replace(' ','').toUpperCase();
+  return `${day} ${time}`;
 }
 
+// ── TASKS ──
 async function loadTasks() {
-  const el = document.getElementById('tasks-list');
-  el.innerHTML = '<div class="loading">loading…</div>';
   try {
     const lists = await gapi('https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=1');
-    if (!lists.items?.length) { el.innerHTML = '<div class="empty">no task lists</div>'; return; }
+    if (!lists.items?.length) { feedState.tasks=''; updateFeed(); return; }
     const r = await gapi(`https://tasks.googleapis.com/tasks/v1/lists/${lists.items[0].id}/tasks?maxResults=15&showCompleted=false&showHidden=false`);
-    const items = r.items || [];
-    if (!items.length) { el.innerHTML = '<div class="empty">no tasks</div>'; return; }
-    el.innerHTML = items.map(task => {
-      const done = task.status === 'completed';
-      const due = task.due ? new Date(task.due).toLocaleDateString('en', {month:'short', day:'numeric'}) : '';
-      return `<div class="task-item">
-        <div class="task-check${done ? ' done' : ''}"></div>
-        <div class="task-title">${esc(task.title || '(no title)')}</div>
-        ${due ? `<div class="task-due">${esc(due)}</div>` : ''}
-      </div>`;
+    const items = r.items||[];
+    if (!items.length) { feedState.tasks='<div class="f-gap"></div><div class="f-sec-lbl">TASKS // CLEAR</div>'; updateFeed(); return; }
+    let html = `<div class="f-gap"></div><div class="f-sec-lbl">TASKS // ACTIVE</div>`;
+    html += items.map(task => {
+      const due = task.due ? new Date(task.due).toLocaleDateString('en',{month:'short',day:'numeric'}).toUpperCase() : '';
+      return `<div class="f-row"><span class="f-ic">\u25a1</span><span class="f-main">${esc(task.title||'(no title)')}</span>${due?`<span class="f-meta">${esc(due)}</span>`:''}` + `</div>`;
     }).join('');
-  } catch(e) { el.innerHTML = `<div class="empty">error: ${esc(e.message)}</div>`; }
+    feedState.tasks = html;
+  } catch(e) {
+    feedState.tasks = `<div class="f-gap"></div><div class="f-sec-lbl">TASKS // ERR</div><div class="f-row"><span class="f-main">${esc(e.message)}</span></div>`;
+  }
+  updateFeed();
 }
 
-function loadAll() { loadMarkets(); loadWeather(); loadGmail(); loadCalendar(); loadTasks(); }
-
-// ─────────────────────────────────────────────
-// MARKETS
-// BTC   — CoinGecko: bitcoin
-// S&P   — CoinGecko: IVVon (Ondo tokenized IVV ETF)
-// 10Y   — US Treasury Fiscal Data API (no key, CORS-friendly)
-// ─────────────────────────────────────────────
+// ── MARKETS ──
 const MARKET_ASSETS = [
-  { label: 'BTC', cgId: 'bitcoin',                                     fmt: p => '$' + (p >= 1000 ? (p/1000).toFixed(1)+'k' : p.toFixed(0)) },
-  { label: 'S&P', cgId: 'ishares-core-s-p-500-etf-ondo-tokenized-etf', fmt: p => '$' + p.toFixed(2) },
-  { label: 'TLT', cgId: 'ishares-20-year-treasury-bond-etf-ondo-tokenized-etf',         fmt: p => '$' + p.toFixed(2) },
+  { label:'BTC', cgId:'bitcoin',                                              fmt:p=>'$'+(p>=1000?(p/1000).toFixed(1)+'k':p.toFixed(0)),  tk:'btc' },
+  { label:'S&P', cgId:'ishares-core-s-p-500-etf-ondo-tokenized-etf',          fmt:p=>'$'+p.toFixed(2),  tk:'sp' },
+  { label:'TLT', cgId:'ishares-20-year-treasury-bond-etf-ondo-tokenized-etf', fmt:p=>'$'+p.toFixed(2),  tk:'tlt' },
 ];
-
 async function loadMarkets() {
   const el = document.getElementById('markets-body');
-  el.innerHTML = '<div class="loading">loading…</div>';
-  const results = await Promise.all(MARKET_ASSETS.map(a =>
-    fetchCoinGecko(a.cgId).catch(e => ({ error: e.message }))
-  ));
-  el.innerHTML = MARKET_ASSETS.map((asset, i) => {
+  el.innerHTML = '<div class="sys-msg">FETCHING\u00b7\u00b7\u00b7</div>';
+  const results = await Promise.all(MARKET_ASSETS.map(a => fetchCoinGecko(a.cgId).catch(e=>({error:e.message}))));
+  el.innerHTML = MARKET_ASSETS.map((asset,i) => {
     const d = results[i];
-    if (d.error) return `<div class="mkt-row">
-      <div class="mkt-name">${asset.label}</div>
-      <div class="mkt-error">${esc(d.error)}</div>
-    </div>`;
+    if (d.error) return `<div class="mkt-row"><span class="mkt-lbl">${asset.label}</span><span class="mkt-err">${esc(d.error)}</span></div>`;
     const { prices } = d;
-    const pct = (prices[prices.length - 1] - prices[0]) / prices[0] * 100;
+    const last = prices[prices.length-1];
+    const pct = (last - prices[0]) / prices[0] * 100;
     const isUp = pct >= 0;
+    const pctStr = (isUp?'+':'')+pct.toFixed(2)+'%';
+    tickerData[asset.tk] = asset.fmt(last)+' '+(isUp?'+':'')+pct.toFixed(1)+'%';
     return `<div class="mkt-row">
-      <div class="mkt-name">${asset.label}</div>
-      <div class="mkt-spark">${mkSparkline(prices, isUp)}</div>
-      <div class="mkt-info">
-        <div class="mkt-price">${asset.fmt(prices[prices.length - 1])}</div>
-        <div class="mkt-chg ${isUp ? 'up' : 'dn'}">${isUp ? '+' : ''}${pct.toFixed(2)}%</div>
-      </div>
+      <span class="mkt-lbl">${asset.label}</span>
+      <span class="mkt-spark">${mkSparkline(prices,isUp)}</span>
+      <span class="mkt-val">${asset.fmt(last)}</span>
+      <span class="mkt-pct ${isUp?'up':'dn'}">${pctStr}</span>
     </div>`;
   }).join('');
+  updateTicker();
 }
-
 async function fetchCoinGecko(coinId) {
   const r = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=7&interval=daily`);
-  if (!r.ok) throw new Error('CG ' + r.status);
+  if (!r.ok) throw new Error('CG '+r.status);
   const d = await r.json();
-  const prices = d.prices.map(p => p[1]).slice(-7);
-  if (prices.length < 2) throw new Error('insufficient data');
+  const prices = d.prices.map(p=>p[1]).slice(-7);
+  if (prices.length<2) throw new Error('no data');
   return { prices };
 }
-
-
 function mkSparkline(prices, isUp) {
-  const W = 100, H = 36, PAD = 2;
-  const min = Math.min(...prices) - PAD;
-  const max = Math.max(...prices) + PAD;
-  const range = max - min || 1;
-  const n = prices.length;
-  const pts = prices.map((p, i) => {
-    const x = (i / (n - 1)) * W;
-    const y = H - ((p - min) / range) * H;
-    return [x.toFixed(1), y.toFixed(1)];
-  });
-  const linePoints = pts.map(p => p.join(',')).join(' ');
-  // Filled area path: line points + close along the bottom
-  const areaPath = `M ${pts[0].join(',')} `
-    + pts.slice(1).map(p => `L ${p.join(',')}`).join(' ')
-    + ` L ${pts[pts.length-1][0]},${H} L ${pts[0][0]},${H} Z`;
-  const stroke = isUp ? '#3c3' : '#c33';
-  const fill   = isUp ? 'rgba(51,204,51,0.08)' : 'rgba(204,51,51,0.08)';
+  const W=100, H=18;
+  const min=Math.min(...prices), max=Math.max(...prices), range=max-min||max*0.01||1, n=prices.length;
+  const pts = prices.map((p,i)=>`${((i/(n-1))*W).toFixed(1)},${(H-((p-min)/range)*(H-2)-1).toFixed(1)}`);
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const upC  = dark ? '#78b858' : '#1a5808';
+  const dnC  = dark ? '#c05838' : '#801408';
+  const stroke = isUp ? upC : dnC;
+  const fillC  = isUp ? (dark?'rgba(120,184,88,0.12)':'rgba(26,88,8,0.1)') : (dark?'rgba(192,88,56,0.12)':'rgba(128,20,8,0.1)');
+  const area = `M ${pts[0]} `+pts.slice(1).map(p=>`L ${p}`).join(' ')+` L ${((n-1)/(n-1)*W).toFixed(1)},${H} L 0,${H} Z`;
   return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
-    <path d="${areaPath}" fill="${fill}" stroke="none"/>
-    <polyline points="${linePoints}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${area}" fill="${fillC}" stroke="none"/>
+    <polyline points="${pts.join(' ')}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`;
 }
 
-// ─────────────────────────────────────────────
-// WEATHER — Open-Meteo (free, no API key)
-// ─────────────────────────────────────────────
+// ── WEATHER ──
 function loadWeather() {
-  const el = document.getElementById('wx-body');
-  el.innerHTML = '<div class="loading">locating…</div>';
-  if (!navigator.geolocation) { el.innerHTML = '<div class="empty">geolocation not supported</div>'; return; }
+  const el=document.getElementById('wx-body');
+  el.innerHTML='<div class="sys-msg">ACQUIRING POSITION\u00b7\u00b7\u00b7</div>';
+  if (!navigator.geolocation){el.innerHTML='<div class="sys-msg">NO GEOLOCATION</div>';return;}
   navigator.geolocation.getCurrentPosition(
-    pos => fetchWeather(pos.coords.latitude, pos.coords.longitude, el),
-    () => el.innerHTML = '<div class="empty">location access denied</div>',
-    { timeout: 10000 }
+    pos=>fetchWeather(pos.coords.latitude,pos.coords.longitude,el),
+    ()=>{el.innerHTML='<div class="sys-msg">LOCATION DENIED</div>';},
+    {timeout:10000}
   );
 }
-
-async function fetchWeather(lat, lon, el) {
+async function fetchWeather(lat,lon,el) {
   try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-      + `&hourly=temperature_2m,precipitation_probability,precipitation`
-      + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max`
-      + `&temperature_unit=fahrenheit&precipitation_unit=inch`
-      + `&wind_speed_unit=mph&timezone=${encodeURIComponent(tz)}&forecast_days=7`;
-    const r = await fetch(url);
+    const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+      +`&hourly=temperature_2m,precipitation_probability`
+      +`&daily=temperature_2m_max,temperature_2m_min`
+      +`&temperature_unit=fahrenheit&timezone=${encodeURIComponent(tz)}&forecast_days=7`;
+    const r=await fetch(url);
     if (!r.ok) throw new Error(r.statusText);
-    const d = await r.json();
-    renderWeather(d, lat, lon, el);
-  } catch(e) { el.innerHTML = `<div class="empty">weather error: ${esc(e.message)}</div>`; }
+    renderWeather(await r.json(), lat, lon, el);
+  } catch(e){el.innerHTML=`<div class="sys-msg">WX ERR: ${esc(e.message)}</div>`;}
 }
-
 function renderWeather(d, lat, lon, el) {
-  const now = new Date();
-  // d.timezone is the IANA timezone inferred from coordinates by Open-Meteo (e.g. "America/New_York")
   const tz = d.timezone;
-  // Compute current hour in the location's timezone — Open-Meteo times are local, not UTC
-  const nowHour = now.toLocaleString('sv-SE', {timeZone: tz}).slice(0, 13).replace(' ', 'T');
-
-  // ── Hourly: next 7 hours ──
-  const hTimes = d.hourly.time;
-  const hTemp  = d.hourly.temperature_2m;
-  const hPop   = d.hourly.precipitation_probability;
-  const startIdx = hTimes.findIndex(t => t >= nowHour);
-  const hourSlice = Array.from({length: 7}, (_, i) => startIdx + i).filter(i => i < hTimes.length);
-
-  const hourHTML = hourSlice.map((i, pos) => {
-    // Parse label directly from the time string to avoid browser-timezone conversion
-    const h = parseInt(hTimes[i].slice(11, 13));
-    const label = pos === 0 ? 'now' : (h === 0 ? '12am' : h < 12 ? h + 'am' : h === 12 ? '12pm' : (h - 12) + 'pm');
-    const pop = hPop[i] ?? 0;
-    return `<div class="wx-hour${pos === 0 ? ' now' : ''}">
-      <div class="wx-hour-time">${label}</div>
-      <div class="wx-hour-temp">${Math.round(hTemp[i])}°</div>
-      <div class="wx-hour-rain">${pop > 0 ? pop + '%' : '—'}</div>
-    </div>`;
+  const nowHour = new Date().toLocaleString('sv-SE',{timeZone:tz}).slice(0,13).replace(' ','T');
+  const hTimes=d.hourly.time, hTemp=d.hourly.temperature_2m, hPop=d.hourly.precipitation_probability;
+  const startIdx=Math.max(0,hTimes.findIndex(t=>t>=nowHour));
+  const hourIdx=Array.from({length:7},(_,i)=>startIdx+i).filter(i=>i<hTimes.length);
+  const BARS='▁▂▃▄▅▆▇█';
+  const temps=hourIdx.map(i=>hTemp[i]);
+  const tMin=Math.min(...temps), tMax=Math.max(...temps), tRange=tMax-tMin||1;
+  const hourHTML=hourIdx.map((idx,pos)=>{
+    const h=parseInt(hTimes[idx].slice(11,13));
+    const lbl=pos===0?'NOW':(h===0?'12A':h<12?h+'A':h===12?'12P':(h-12)+'P');
+    const temp=Math.round(hTemp[idx]);
+    const pop=hPop[idx]??0;
+    const bi=Math.min(7,Math.floor(((temp-tMin)/tRange)*8));
+    return `<div class="wx-h"><span class="wx-h-bar${pop>=40?' wet':''}">${BARS[bi]}</span><span class="wx-h-temp">${temp}\u00b0</span><span class="wx-h-lbl">${lbl}</span></div>`;
   }).join('');
-
-  // ── Daily: 7 days ──
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const dTimes = d.daily.time;
-  const dHi    = d.daily.temperature_2m_max;
-  const dLo    = d.daily.temperature_2m_min;
-  const dPop   = d.daily.precipitation_probability_max;
-  const dPrecip = d.daily.precipitation_sum;
-
-  // Temperature range across all 7 days for bar scaling
-  const allHi = Math.max(...dHi), allLo = Math.min(...dLo);
-  const range = allHi - allLo || 1;
-
-  const dayHTML = dTimes.map((t, i) => {
-    const date = new Date(t + 'T12:00:00');
-    const isToday = i === 0;
-    const name = isToday ? 'today' : days[date.getDay()];
-    const pop = dPop[i] ?? 0;
-    const precip = dPrecip[i] ?? 0;
-    // Bar: left offset and width scaled to the week's temp range
-    const left = ((dLo[i] - allLo) / range * 100).toFixed(1);
-    const width = ((dHi[i] - dLo[i]) / range * 100).toFixed(1);
-    const rainLabel = pop > 0 ? (precip > 0.05 ? precip.toFixed(2) + '"' : pop + '%') : '—';
-    return `<div class="wx-day">
-      <div class="wx-day-name">${name}</div>
-      <div class="wx-day-bar-wrap">
-        <div class="wx-day-lo">${Math.round(dLo[i])}°</div>
-        <div class="wx-day-bar-bg"><div class="wx-day-bar" style="left:${left}%;width:${width}%"></div></div>
-        <div class="wx-day-hi">${Math.round(dHi[i])}°</div>
-      </div>
-      <div class="wx-day-rain">${rainLabel}</div>
-    </div>`;
+  const DAYS=['SU','MO','TU','WE','TH','FR','SA'];
+  const dTimes=d.daily.time, dHi=d.daily.temperature_2m_max, dLo=d.daily.temperature_2m_min;
+  const dayHTML=dTimes.slice(0,7).map((t,i)=>{
+    const name=i===0?'TD':DAYS[new Date(t+'T12:00:00').getDay()];
+    return `<div class="wx-d"><span class="wx-d-name">${name}</span><span class="wx-d-hi">${Math.round(dHi[i])}\u00b0</span><span class="wx-d-lo">${Math.round(dLo[i])}\u00b0</span></div>`;
   }).join('');
-
-  // Reverse geocode city name via Open-Meteo's geocoding isn't available,
-  // so show rounded coordinates as a lightweight location hint
-  const locLabel = `${Math.abs(lat).toFixed(2)}°${lat>=0?'N':'S'} ${Math.abs(lon).toFixed(2)}°${lon>=0?'E':'W'}`;
-
-  el.innerHTML = `
-    <div class="wx-hourly">${hourHTML}</div>
-    <div class="wx-daily">${dayHTML}</div>
-    <div class="wx-location">${locLabel}</div>`;
+  const curTemp=Math.round(hTemp[startIdx]||hTemp[0]);
+  document.getElementById('wx-head-r').textContent=`${curTemp}\u00b0F \u00b7 ${d.timezone_abbreviation||''}`;
+  tickerData.wx=`${curTemp}\u00b0F`;
+  updateTicker();
+  el.innerHTML=`<div class="wx-hr-row">${hourHTML}</div><div class="wx-dy-row">${dayHTML}</div><div class="wx-foot">${Math.abs(lat).toFixed(1)}\u00b0${lat>=0?'N':'S'} ${Math.abs(lon).toFixed(1)}\u00b0${lon>=0?'E':'W'}</div>`;
 }
 
-// ─────────────────────────────────────────────
-// GEMINI LAUNCHER
-// iOS: no confirmed URL scheme for standalone app — opens web which
-//   may hand off to the app via Safari's smart app banners.
-// Android: intent URL targets com.google.android.apps.bard (Gemini's
-//   package name) and falls back to the web if not installed.
-// ─────────────────────────────────────────────
-function detectPlatform() {
-  const ua = navigator.userAgent;
-  if (/android/i.test(ua)) return 'android';
-  if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
-  return 'desktop';
-}
-
-function openGemini() {
-  // Programmatic anchor click bypasses popup blocking that affects window.open()
-  // when called from touch event handlers on iOS/mobile.
-  // On iOS Safari this opens a Safari View Controller (modal); tapping Done returns here.
-  const a = document.createElement('a');
-  a.href = 'https://gemini.google.com/app';
-  a.target = '_blank';
-  a.rel = 'noopener noreferrer';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-function initGeminiPanel() {
-  const platform = detectPlatform();
-  const note = document.getElementById('gemini-platform');
-  note.textContent = platform === 'ios'
-    ? 'Opens as Safari modal · tap Done to return'
-    : platform === 'android' ? 'Opens in new tab' : 'Opens gemini.google.com';
-}
-
-// ─────────────────────────────────────────────
-// GOOGLE API HELPER
-// ─────────────────────────────────────────────
+// ── HELPERS ──
 async function gapi(url) {
-  const r = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-  if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error?.message || r.statusText); }
+  const r=await fetch(url,{headers:{Authorization:`Bearer ${accessToken}`}});
+  if (!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||r.statusText);}
   return r.json();
 }
-
 function esc(str) {
   if (!str) return '';
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
-
-<!-- Google Identity Services — provides initTokenClient() -->
 <script src="https://accounts.google.com/gsi/client" onload="initGIS()" async defer></script>
-
 </body>
 </html>
