@@ -172,13 +172,6 @@
 
     <div class="sep"></div>
 
-    <div id="sec-wx">
-      <div class="sh"><span class="sh-lbl">WX</span><span class="sh-line"></span><span class="sh-r" id="wx-hr">LOCATING&#183;&#183;&#183;</span></div>
-      <div id="wx-body"><div class="sys-msg">ACQUIRING&#183;&#183;&#183;</div></div>
-    </div>
-
-    <div class="sep"></div>
-
     <div id="sec-data">
       <div class="sh">
         <span class="sh-lbl">SYS</span><span class="sh-line"></span>
@@ -201,6 +194,14 @@
         <div class="pb-row"><span class="pb-lbl">UPTIME</span><span class="pb-bar" id="pb3">&#8212;</span><span class="pb-val" id="pv3">&#8212;</span></div>
       </div>
     </div>
+
+    <div class="sep"></div>
+
+    <div id="sec-wx">
+      <div class="sh"><span class="sh-lbl">WX</span><span class="sh-line"></span><span class="sh-r" id="wx-hr">LOCATING&#183;&#183;&#183;</span></div>
+      <div id="wx-body"><div class="sys-msg">ACQUIRING&#183;&#183;&#183;</div></div>
+    </div>
+
   </div>
 
   <!-- GEMINI -->
@@ -222,7 +223,8 @@
 </div>
 <script>
 const CLIENT_ID='643098083415-aldnf1l4k3m7r19airb07s42bolg9e16.apps.googleusercontent.com';
-const SCOPES=['https://www.googleapis.com/auth/gmail.readonly','https://www.googleapis.com/auth/calendar.readonly','https://www.googleapis.com/auth/tasks.readonly','openid','email','profile'].join(' ');
+const PROJ_NUM=CLIENT_ID.split('-')[0];
+const SCOPES=['https://www.googleapis.com/auth/gmail.readonly','https://www.googleapis.com/auth/calendar.readonly','https://www.googleapis.com/auth/tasks.readonly','https://www.googleapis.com/auth/cloud-platform.read-only','openid','email','profile'].join(' ');
 let accessToken=null,tokenClient=null,currentPanel=0;
 const T0=Date.now();
 
@@ -317,6 +319,7 @@ function loadAll(){
   document.getElementById('cal-col').innerHTML='<span class="ct-hdr">CAL \u00b7\u00b7\u00b7</span>';
   document.getElementById('tasks-col').innerHTML='<span class="ct-hdr">TASKS \u00b7\u00b7\u00b7</span>';
   loadMarkets();loadWeather();loadGmail();loadCalendar();loadTasks();
+  // loadGemini() called by loadMarkets after mkt-body is rendered
 }
 
 // GMAIL
@@ -404,8 +407,8 @@ async function loadMarkets(){
       +mkAsciiBar(prices,up,rows,barW);
   }
   let html=`<div class="mk-2col"><div class="mk-col">${mkCard(ASSETS[0],res[0],5,2)}</div><div class="mk-col">${mkCard(ASSETS[1],res[1],5,2)}</div></div>`;
-  html+=`<div class="sep"></div>${mkCard(ASSETS[2],res[2],5,3)}`;
-  el.innerHTML=html;updateTicker();
+  html+=`<div class="sep"></div><div class="mk-2col"><div class="mk-col">${mkCard(ASSETS[2],res[2],5,2)}</div><div class="mk-col" id="gem-body"><div class="sys-msg">GEM \u00b7\u00b7\u00b7</div></div></div>`;
+  el.innerHTML=html;updateTicker();loadGemini();
 }
 async function fetchCG(id){
   const r=await fetch(`https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=7&interval=daily`);
@@ -419,10 +422,48 @@ function mkAsciiBar(prices,up,rows,barW){
   const n=prices.length;
   const mn=Math.min(...prices),mx=Math.max(...prices),rng=mx-mn||mx*0.005||1;
   const heights=prices.map(p=>Math.max(0,Math.round(((p-mn)/rng)*rows)));
-  const bCh='\u2588'.repeat(barW),eCh='\u00a0'.repeat(barW);
+  const bCh='\u2588'.repeat(barW),eCh='\u00b7'.repeat(barW);
   const lines=[];
   for(let row=rows;row>=1;row--)lines.push(heights.map(h=>h>=row?bCh:eCh).join(''));
   return`<pre class="ac ${up?'up':'dn'}">${lines.join('\n')}</pre>`;
+}
+
+// GEMINI QUOTA
+async function loadGemini(){
+  const el=document.getElementById('gem-body');if(!el)return;
+  try{
+    const url=`https://cloudquotas.googleapis.com/v1/projects/${PROJ_NUM}/locations/global/quotaInfos?filter=service%3Dgenerativelanguage.googleapis.com&pageSize=50`;
+    const r=await fetch(url,{headers:{Authorization:`Bearer ${accessToken}`}});
+    if(!r.ok)throw new Error('quota '+r.status);
+    const data=await r.json();
+    const qs=data.quotaInfos||[];
+    // Pick the most useful quotas
+    const pick=(kw)=>qs.find(q=>(q.quotaId||'').toLowerCase().includes(kw));
+    const rpm=pick('requests-per-minute');
+    const tpm=pick('tokens-per-minute');
+    const tpd=pick('tokens-per-day')||pick('tokens-per-project-per-day');
+    function qRow(label,q){
+      if(!q)return'';
+      const val=q.dimensionsInfos?.[0]?.details?.value||q.quotaValue||'?';
+      const barsW=Math.min(10,Math.round((parseInt(val)||0)/1000));
+      return`<div class="mk-row"><span class="mk-lbl" style="font-size:13px;width:36px">${label}</span><span class="mk-dashes">\u00b7\u00b7\u00b7</span><span style="font-size:14px;color:var(--hi)">${val}</span></div>`;
+    }
+    let h=`<div class="mk-row"><span class="mk-lbl">GEM</span><span class="mk-dashes">\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7</span><span style="font-size:13px;color:var(--dim)">QUOTA</span></div>`;
+    h+=qRow('RPM',rpm)+qRow('TPM',tpm)+qRow('TPD',tpd);
+    if(!rpm&&!tpm&&!tpd){
+      const top3=qs.slice(0,3);
+      if(top3.length){
+        h+=top3.map(q=>{
+          const id=(q.quotaId||'').replace(/-per-project.*/,'').replace(/-/g,' ').toUpperCase().slice(0,16);
+          const val=q.dimensionsInfos?.[0]?.details?.value||'?';
+          return`<div class="mk-row"><span style="font-size:12px;color:var(--dim);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(id)}</span><span style="font-size:13px;color:var(--hi);flex-shrink:0">${val}</span></div>`;
+        }).join('');
+      }else{h+=`<div class="mk-err">NO QUOTAS FOUND</div>`;}
+    }
+    el.innerHTML=h;
+  }catch(e){
+    el.innerHTML=`<div class="mk-row"><span class="mk-lbl">GEM</span><span class="mk-dashes">\u00b7\u00b7\u00b7</span></div><div class="mk-err">${esc(e.message)}</div>`;
+  }
 }
 
 // WEATHER
@@ -450,7 +491,7 @@ function renderWx(d,lat,lon,el){
   function mkWxAscii(temps,barW){
     const n=temps.length,mn=Math.min(...temps),mx=Math.max(...temps),rng=mx-mn||2;
     const heights=temps.map(p=>Math.max(0,Math.round(((p-mn)/rng)*4)));
-    const bCh='\u2588'.repeat(barW),eCh='\u00a0'.repeat(barW);
+    const bCh='\u2588'.repeat(barW),eCh='\u00b7'.repeat(barW);
     const lines=[];
     for(let row=4;row>=1;row--)lines.push(heights.map(h=>h>=row?bCh:eCh).join(''));
     return`<pre class="ac neu">${lines.join('\n')}</pre>`;
